@@ -106,8 +106,8 @@ class Particle:
     def update_g_best(self, g_best_net):
         self.g_best = g_best_net
 
-    def work_func(self,seed):
-        child_net = self.mutate_net(self.parent_net,seed)
+    def work_func(self, seed):
+        child_net = self.mutate_net(self.parent_net, seed)
         reward, frames = self.evaluate(child_net)
         result = (seed, reward, frames)
         return result
@@ -142,11 +142,10 @@ class Particle:
     def update_parent_position(self, g_best_seeds):
         # l_best = self.build_net(self.l_best_seed)
         g_best = self.build_g_best(g_best_seeds)
-        for p,l,g in self.parent_net.parameters(), self.l_best.parameters(), g_best.parameters():
+        for p, l, g in self.parent_net.parameters(), self.l_best.parameters(), g_best.parameters():
             r_g = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
             r_p = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
-            v = self.chi * (self.phi_p * r_p * (l.data-p.data) \
-                                 + self.phi_g * r_g * (g.data - p.data))
+            v = self.chi * (self.phi_p * r_p * (l.data-p.data) + self.phi_g * r_g * (g.data - p.data))
             p.data += v
 
     # just evolve 1 generation to find the best child
@@ -249,6 +248,7 @@ class ParticleSwarm:
             # result = pool.map(update_particle, input_t)
             # pool.close()
             # pool.join()
+
             # evolve particle
             self.results = []
             for particle in self.p_input:
@@ -262,7 +262,7 @@ class ParticleSwarm:
             if self.results[0][1] > self.best_score:
                 self.best_net = self.result[0][0]
                 self.best_score = self.result[0][1]
-        self.logger.info("time cost:{}".format(time.time-time_start))
+        self.logger.info("time cost:{}".format((time.time-time_start)))
 
 
 def main(**exp):
