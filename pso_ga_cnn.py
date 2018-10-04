@@ -242,13 +242,12 @@ class ParticleSwarm:
         # particle = Particle(population=10)
         self.init_swarm()
         while self.frames < self.frames_limit:
-
-            pool = mp.Pool(self.population)
-            # (seed, reward, frames)
-            result = pool.map(update_particle, self.p_input)
-            pool.close()
-            pool.join()
-
+            # input_t = [1, 2, 3, 4, 5, 6, 7, 8]
+            # pool = mp.Pool(self.population)
+            # # (seed, reward, frames)
+            # result = pool.map(update_particle, input_t)
+            # pool.close()
+            # pool.join()
             # evolve particle
             self.results = []
             for particle in self.p_input:
