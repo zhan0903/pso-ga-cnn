@@ -252,6 +252,7 @@ class ParticleSwarm:
             # evolve particle
             self.results = []
             for particle in self.p_input:
+                self.logger.debug("particle:{}".format(particle))
                 result = particle.evolve_particle()
                 self.results.append(result)
 
