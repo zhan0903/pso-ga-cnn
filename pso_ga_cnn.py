@@ -241,6 +241,7 @@ class ParticleSwarm:
         self.create_swarm()
         # particle = Particle(population=10)
         self.init_swarm()
+        time_start = time.time()
         while self.frames < self.frames_limit:
             # input_t = [1, 2, 3, 4, 5, 6, 7, 8]
             # pool = mp.Pool(self.population)
@@ -261,6 +262,7 @@ class ParticleSwarm:
             if self.results[0][1] > self.best_score:
                 self.best_net = self.result[0][0]
                 self.best_score = self.result[0][1]
+        self.logger.info("time cost:{}".format(time.time-time_start))
 
 
 def main(**exp):
@@ -294,7 +296,8 @@ def main(**exp):
 
     logger.info("{}".format(str(json.dumps(exp, indent=4, sort_keys=True))))
     for game in games:
-        swarm = ParticleSwarm(frames_limit=frames_limit, game=game, swarm_size=swarm_size, population=population_per_worker, logger=logger)
+        swarm = ParticleSwarm(frames_limit=frames_limit, game=game, swarm_size=swarm_size,
+                              population=population_per_worker, logger=logger)
         swarm.evolve_swarm()
         logger.info("game=%s,reward_max=%.2f" % (game, swarm.best_score))
 
