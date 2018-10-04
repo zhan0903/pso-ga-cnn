@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import copy
 import ptan
-# import multiprocessing as mp
-import torch.multiprocessing as mp
+import multiprocessing as mp
+# import torch.multiprocessing as mp
 import time
 import collections
 import gym.spaces
