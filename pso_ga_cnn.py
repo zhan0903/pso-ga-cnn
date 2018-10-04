@@ -9,6 +9,9 @@ import time
 import collections
 import gym.spaces
 import gym
+import sys
+import json
+import logging
 
 
 MAX_SEED = 2**32 - 1
@@ -136,10 +139,10 @@ class Particle:
     #     return new_net
 
     # update particle's position
-    def update_parent_position(self,g_best_seeds):
+    def update_parent_position(self, g_best_seeds):
         # l_best = self.build_net(self.l_best_seed)
         g_best = self.build_g_best(g_best_seeds)
-        for p,l,g in self.parent_net.parameters(),self.l_best.parameters(),g_best.parameters():
+        for p,l,g in self.parent_net.parameters(), self.l_best.parameters(), g_best.parameters():
             r_g = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
             r_p = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
             v = self.chi * (self.phi_p * r_p * (l.data-p.data) \
@@ -148,6 +151,7 @@ class Particle:
 
     # just evolve 1 generation to find the best child
     def evolve_particle(self):
+        # mp.set_start_method('spawn')
         input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
         pool = mp.Pool(self.population)
         # (seed, reward, frames)
@@ -158,9 +162,9 @@ class Particle:
         result.sort(key=lambda p: p[1], reverse=True)
         all_frames = sum([pair[2] for pair in result])
         if self.l_best_value < result[0][1]:
-            self.l_best_seed = result[0][0]
+            # self.l_best_seed = result[0][0]
             self.l_best_value = result[0][1]
-            self.l_best = self.mutate_net(self.parent_net, self.l_best_seed)
+            self.l_best = self.mutate_net(self.parent_net, result[0][0])
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
         return self.l_best, self.l_best_value, all_frames
@@ -171,7 +175,7 @@ def update_particle(particle):
 
 
 class ParticleSwarm:
-    def __init__(self, frames_limit=1000, swarm_size=2, game="PongNoFrameskip-v4",population=20, chi=0.72984, phi_p=2.05, phi_g=2.05):
+    def __init__(self, frames_limit=1000, swarm_size=2, game="PongNoFrameskip-v4", population=20, chi=0.72984, phi_p=2.05, phi_g=2.05,logger=None):
         self.swarm_size = swarm_size
         self.chi = chi
         self.phi_p = phi_p
@@ -180,6 +184,7 @@ class ParticleSwarm:
         self.best_score = None
         # self.best_seeds = None
         self.best_net = None
+        self.logger = logger
 
         self.frames_limit = frames_limit
         self.population = population
@@ -218,7 +223,7 @@ class ParticleSwarm:
 
     def init_swarm(self):
         for particle in self.p_input:
-            # parent_net, reward, fram
+            # parent_net, reward, frame
             result = particle.create_uniform_parent()
             self.results.append(result)
 
@@ -232,15 +237,6 @@ class ParticleSwarm:
 
     # find the new best global among all particle
     def evolve_swarm(self):
-        devices = []
-        gpu_number = torch.cuda.device_count()
-        # elite = None
-        if gpu_number >= 1:
-            for i in range(gpu_number):
-                devices.append("cuda:{0}".format(i))
-
-        # t_start = time.time()
-
         # init particle create device
         self.create_swarm()
         # particle = Particle(population=10)
@@ -253,16 +249,50 @@ class ParticleSwarm:
                 self.results.append(result)
 
             self.results.sort(key=lambda p: p[1], reverse=True)
-            frames = sum([pair[2] for pair in self.result])
+            frames = sum([result[2] for result in self.results])
             self.frames = self.frames+frames
 
             if self.results[0][1] > self.best_score:
                 self.best_net = self.result[0][0]
                 self.best_score = self.result[0][1]
 
-        print("best score", self.best_score)
+def main(**exp):
+    mp.set_start_method('spawn')
+    logger = logging.getLogger(__name__)
+    fh = logging.FileHandler('./logger.out')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    if exp["debug"]:
+        logger.setLevel(level=logging.DEBUG)
+    else:
+        logger.setLevel(level=logging.INFO)
+
+    swarm_size = exp["swarm_size"]
+    population_per_worker = exp["population_per_worker"]
+    games = exp["games"].split(',')
+    logger.info("games:{}".format(games))
+
+    if exp["frames_limit"][-1] == "B":
+        frames_limit = 1000000000*int(exp["frames_limit"][:-1])
+    elif exp["frames_limit"][-1] == "M":
+        frames_limit = 1000000*int(exp["frames_limit"][:-1])
+    else:
+        frames_limit = int(exp["frames_limit"])
+
+    logger.info("{}".format(str(json.dumps(exp, indent=4, sort_keys=True))))
+    for game in games:
+        swarm = ParticleSwarm(frames_limit=frames_limit, game=game, swarm_size=swarm_size, population=population_per_worker, logger=logger)
+        swarm.evolve_swarm()
+        logger.info("game=%s,reward_max=%.2f" % (game, swarm.best_score))
 
 
 if __name__ == '__main__':
-    swarm = ParticleSwarm()
-    swarm.evolve_swarm()
+    with open(sys.argv[-1], 'r') as f:
+        exp = json.loads(f.read())
+    main(**exp)
