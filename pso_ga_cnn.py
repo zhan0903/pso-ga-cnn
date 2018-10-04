@@ -242,6 +242,13 @@ class ParticleSwarm:
         # particle = Particle(population=10)
         self.init_swarm()
         while self.frames < self.frames_limit:
+
+            pool = mp.Pool(self.population)
+            # (seed, reward, frames)
+            result = pool.map(update_particle, self.p_input)
+            pool.close()
+            pool.join()
+
             # evolve particle
             self.results = []
             for particle in self.p_input:
@@ -255,6 +262,7 @@ class ParticleSwarm:
             if self.results[0][1] > self.best_score:
                 self.best_net = self.result[0][0]
                 self.best_score = self.result[0][1]
+
 
 def main(**exp):
     mp.set_start_method('spawn')
