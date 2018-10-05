@@ -156,6 +156,9 @@ class Particle:
     def update_g_best(self, g_best_net):
         self.g_best = g_best_net
 
+    def return_parent_net(self):
+        return self.parent_net
+
     # def work_func(self, seed):
     #     child_net = self.mutate_net(self.parent_net, seed)
     #     reward, frames = self.evaluate(child_net)
@@ -203,7 +206,11 @@ class Particle:
         # mp.set_start_method('spawn')
         input_m = []
         self.logger.debug("in evolve_particle self.population:{}".format(self.population))
-        self.logger.debug("in evolve_particle,self.parent_net['fc.2.bias']".format(self.parent_net.state_dict()['fc.2.bias']))
+        self.logger.debug("in evolve_particle,self.parent_net['fc.2.bias']".
+                          format(self.parent_net.state_dict()['fc.2.bias']))
+        net_test = self.return_parent_net()
+        self.logger.debug("in evolve_particle,net_test['fc.2.bias']".
+                          format(net_test.state_dict()['fc.2.bias']))
         for _ in range(self.population):
             seed = np.random.randint(MAX_SEED)
             parent_net = self.parent_net.state_dict()
