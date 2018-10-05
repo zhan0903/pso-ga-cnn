@@ -217,6 +217,7 @@ class Particle:
         net_test = self.return_parent_net()
         self.logger.debug("in evolve_particle,net_test['fc.2.bias']:{}".
                           format(net_test.state_dict()['fc.2.bias']))
+
         for _ in range(self.population):
             seed = np.random.randint(MAX_SEED)
             parent_net = self.parent_net.state_dict()
@@ -226,7 +227,9 @@ class Particle:
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
 
         # self.logger.debug("parent_net[0]['fc.2.bias']:".format(input_m[0][1]['fc.2.bias']))
+        self.logger.debug("cpu_count:{}".format(mp.cpu_count()))
         pool = mp.Pool(self.population)
+        # for i in range(self.population):
         # (seed, reward, frames)
         result = pool.map(work_func, input_m)
         pool.close()
