@@ -207,7 +207,7 @@ class Particle:
             input_m.append((seed, parent_net, self.game, self.device))
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
 
-        self.logger.debug("parent_net[0]['fc.2.bias']:".format(parent_net[0]['fc.2.bias']))
+        self.logger.debug("parent_net[0]['fc.2.bias']:".format(input_m[0][1]['fc.2.bias']))
         pool = mp.Pool(self.population)
         # (seed, reward, frames)
         result = pool.map(work_func, input_m)
