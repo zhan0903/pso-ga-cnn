@@ -131,6 +131,7 @@ class Particle:
             p.data += re_distribution
 
         self.parent_net = parent_net
+        self.logger.debug("parent_net:{}".format(self.parent_net.state_dict()['fc.2.bias']))
         reward, frames = evaluate(self.parent_net, self.env)
         self.l_best_value = reward
         self.l_best = self.parent_net
