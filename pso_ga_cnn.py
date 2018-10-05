@@ -300,8 +300,10 @@ class ParticleSwarm:
         self.best_net = self.results[0][0]
 
         for particle in self.p_input:
-            self.logger.debug("in init_swarm:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
+            self.logger.debug("in init_swarm before:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
             particle.update_g_best(self.best_net)
+            self.logger.debug("in init_swarm after:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
+
 
     # find the new best global among all particle
     def evolve_swarm(self):
