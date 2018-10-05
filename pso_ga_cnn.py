@@ -84,12 +84,12 @@ def evaluate(net, env_e):
     return reward, frames
 
 
-def mutate_net(net, seed, copy_net=True):
+def mutate_net(net, seed, device, copy_net=True):
     new_net = copy.deepcopy(net) if copy_net else net
     # np.random.seed(seed)
     for p in new_net.parameters():
         np.random.seed(seed)
-        noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32))
+        noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
         p.data += mutation_step * noise_t
     return new_net
 
@@ -102,7 +102,7 @@ def work_func(input_w):
     env_w = make_env(game)
     parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n).to(device)
     parent_net_w.load_state_dict(parent_net)
-    child_net = mutate_net(parent_net_w, seed_w).to(device)
+    child_net = mutate_net(parent_net_w, seed_w, device)
     reward, frames = evaluate(child_net, env_w).to(device)
     result = (seed_w, reward, frames)
     return result
