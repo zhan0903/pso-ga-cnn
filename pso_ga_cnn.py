@@ -124,10 +124,9 @@ class Particle:
         # self.init_uniform_parent()
 
     def create_uniform_parent(self):
-        parent_net = Net(self.env.observation_space.shape, self.env.action_space.n).to(self.device)
+        parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)
         for p in parent_net.parameters():
-            re_distribution = torch.tensor(np.random.uniform(low=-2, high=2, size=p.data.size()).astype(np.float32)).\
-                to(self.device)
+            re_distribution = torch.tensor(np.random.uniform(low=-2, high=2, size=p.data.size()).astype(np.float32))
             p.data += re_distribution
 
         self.parent_net = parent_net
