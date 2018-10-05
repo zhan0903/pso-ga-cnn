@@ -87,7 +87,7 @@ def evaluate(net, env_e):
 def mutate_net(net, seed, device, copy_net=True):
     new_net = copy.deepcopy(net) if copy_net else net
     # np.random.seed(seed)
-    print("in mutate_net, parent_net:{}".format(new_net['fc.2.bias']))
+    print("in mutate_net, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
     for p in new_net.parameters():
         np.random.seed(seed)
         noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
