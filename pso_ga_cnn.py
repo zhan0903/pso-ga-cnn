@@ -131,7 +131,7 @@ class Particle:
             p.data += re_distribution
 
         self.parent_net = parent_net
-        reward, frames = self.evaluate(self.parent_net)
+        reward, frames = evaluate(self.parent_net, self.env)
         self.l_best_value = reward
         self.l_best = self.parent_net
         return self.parent_net, reward, frames
