@@ -202,8 +202,8 @@ class Particle:
         input_m = []
         for _ in range(self.population):
             seed = np.random.randint(MAX_SEED)
-            parent_net = self.parent_net.state_dict()
-            input_m.append((seed,parent_net,self.game,self.device))
+            parent_net = self.parent_net.state_dict().to(self.device)
+            input_m.append((seed, parent_net, self.game, self.device))
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
         pool = mp.Pool(self.population)
         # (seed, reward, frames)
@@ -216,7 +216,7 @@ class Particle:
         if self.l_best_value < result[0][1]:
             # self.l_best_seed = result[0][0]
             self.l_best_value = result[0][1]
-            self.l_best = self.mutate_net(self.parent_net, result[0][0])
+            self.l_best = mutate_net(self.parent_net, result[0][0])
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
         return self.l_best, self.l_best_value, all_frames
