@@ -125,12 +125,12 @@ class Particle:
         # self.init_uniform_parent()
 
     def create_uniform_parent(self):
-        parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)
-        for p in parent_net.parameters():
+        self.parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)
+        for p in self.parent_net.parameters():
             re_distribution = torch.tensor(np.random.uniform(low=-2, high=2, size=p.data.size()).astype(np.float32))
             p.data += re_distribution
 
-        self.parent_net = parent_net
+        # self.parent_net = parent_net
         self.logger.debug("parent_net:{}".format(self.parent_net.state_dict()['fc.2.bias']))
         reward, frames = evaluate(self.parent_net, self.env)
         self.l_best_value = reward
