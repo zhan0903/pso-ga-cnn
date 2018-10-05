@@ -160,9 +160,9 @@ class Particle:
         self.logger.debug("in evolve_particle self.population:{}".format(self.population))
         self.logger.debug("in evolve_particle,self.parent_net['fc.2.bias']:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
-        net_test = self.return_parent_net()
-        self.logger.debug("in evolve_particle,net_test['fc.2.bias']:{}".
-                          format(net_test.state_dict()['fc.2.bias']))
+        # net_test = self.return_parent_net()
+        # self.logger.debug("in evolve_particle,net_test['fc.2.bias']:{}".
+        #                   format(net_test.state_dict()['fc.2.bias']))
 
         # population == tasks number
         for _ in range(self.population):
