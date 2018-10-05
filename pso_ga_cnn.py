@@ -202,7 +202,7 @@ class Particle:
         input_m = []
         for _ in range(self.population):
             seed = np.random.randint(MAX_SEED)
-            parent_net = self.parent_net.state_dict().to(self.device)
+            parent_net = self.parent_net.to(self.device).state_dict()
             input_m.append((seed, parent_net, self.game, self.device))
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
         pool = mp.Pool(self.population)
