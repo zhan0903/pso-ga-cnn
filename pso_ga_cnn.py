@@ -18,10 +18,6 @@ MAX_SEED = 2**32 - 1
 mutation_step = 0.005
 
 
-def dim_weights(model):
-    return sum([p.numel() for p in model.parameters()])
-
-
 def make_env(game):
     return ptan.common.wrappers.wrap_dqn(gym.make(game))
 
@@ -60,13 +56,6 @@ class Net(nn.Module):
 OutputItem = collections.namedtuple('OutputItem', field_names=['top_children_p', 'frames','position'])
 
 
-def work_func(self, seed):
-    child_net = self.mutate_net(self.parent_net, seed)
-    reward, frames = self.evaluate(child_net)
-    result = (seed, reward, frames)
-    return result
-
-
 def evaluate(net, device,env_e):
     frames = 0
     # env_e = make_env(game)
@@ -94,7 +83,6 @@ def mutate_net(net, seed, device, copy_net=True):
         p.data += mutation_step * noise_t
 
     # print("in mutate_net,After, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
-
     return new_net
 
 
@@ -144,42 +132,11 @@ class Particle:
         self.l_best = self.parent_net
         return self.parent_net, reward, frames
 
-    # def evaluate(self, net):
-    #     frames = 0
-    #     env_e = make_env(self.game)
-    #     obs = env_e.reset()
-    #     reward = 0.0
-    #     while True:
-    #         obs_v = torch.FloatTensor([np.array(obs, copy=False)]).to(self.device)
-    #         act_prob = net(obs_v).to(self.device)
-    #         acts = act_prob.max(dim=1)[1]
-    #         obs, r, done, _ = env_e.step(acts.data.cpu().numpy()[0])
-    #         reward += r
-    #         frames += 4
-    #         if done:
-    #             break
-    #     return reward, frames
-
     def update_g_best(self, g_best_net):
         self.g_best = g_best_net
 
     def return_parent_net(self):
         return self.parent_net
-
-    # def work_func(self, seed):
-    #     child_net = self.mutate_net(self.parent_net, seed)
-    #     reward, frames = self.evaluate(child_net)
-    #     result = (seed, reward, frames)
-    #     return result
-
-    # def mutate_net(self, net, seed, copy_net=True):
-    #     new_net = copy.deepcopy(net) if copy_net else net
-    #     # np.random.seed(seed)
-    #     for p in new_net.parameters():
-    #         np.random.seed(seed)
-    #         noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(self.device)
-    #         p.data += self.mutation_step * noise_t
-    #     return new_net
 
     def build_g_best(self, seeds):
         torch.manual_seed(seeds[0])
@@ -188,15 +145,6 @@ class Particle:
         for seed in seeds[1:]:
             net = self.mutate_net(net, seed, self.device, copy_net=False)
         return net
-
-    # def build_net(self,seeds):
-    #     new_net = copy.deepcopy(self.parent_net)
-    #     for p in new_net.parameters():
-    #         np.random.seed(seed)
-    #         noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32))
-    #         p.data += self.mutation_step * noise_t
-    #
-    #     return new_net
 
     # update particle's position
     def update_parent_position(self, g_best_seeds):
@@ -254,7 +202,7 @@ def update_particle(particle):
 
 
 class ParticleSwarm:
-    def __init__(self, frames_limit=1000, swarm_size=2, game="PongNoFrameskip-v4", population=20, chi=0.72984, phi_p=2.05, phi_g=2.05,logger=None):
+    def __init__(self, frames_limit=100000, swarm_size=2, game="PongNoFrameskip-v4", population=20, chi=0.72984, phi_p=2.05, phi_g=2.05,logger=None):
         self.swarm_size = swarm_size
         self.chi = chi
         self.phi_p = phi_p
@@ -289,14 +237,7 @@ class ParticleSwarm:
             else:
                 device_id = u % gpu_number
                 device = self.devices[device_id]
-            # particle_position = Net(self.env.observation_space.shape, self.env.action_space.n)
-            # # np.random.seed(seed)
-            # for p in particle_position.parameters():
-            #     np.random.seed(seed)
-            #     re_distribution = torch.tensor(
-            #         np.random.uniform(low=-1, high=1, size=p.data.size()).astype(np.float32))
-            #     p.data += re_distribution
-            # init_position = particle_position.state_dict()
+
             p = Particle(logger=self.logger, device=device, population=self.population, game=self.game)
             self.p_input.append(p)
 
@@ -324,13 +265,6 @@ class ParticleSwarm:
         self.init_swarm()
         time_start = time.time()
         while self.frames < self.frames_limit:
-            # input_t = [1, 2, 3, 4, 5, 6, 7, 8]
-            # pool = mp.Pool(self.population)
-            # # (seed, reward, frames)
-            # result = pool.map(update_particle, input_t)
-            # pool.close()
-            # pool.join()
-
             # evolve particle
             self.results = []
             self.logger.debug("self.p_input:{}".format(self.p_input))
@@ -348,6 +282,7 @@ class ParticleSwarm:
             if self.results[0][1] > self.best_score:
                 self.best_net = self.result[0][0]
                 self.best_score = self.result[0][1]
+            self.logger.info("best core:{}".format(self.best_score))
         self.logger.info("time cost:{}".format((time.time()-time_start)/60))
 
 
