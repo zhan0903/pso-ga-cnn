@@ -131,7 +131,7 @@ class Particle:
             p.data += re_distribution
 
         # self.parent_net = parent_net
-        self.logger.debug("parent_net:{}".format(self.parent_net.state_dict()['fc.2.bias']))
+        self.logger.debug("create_uniform_parent, parent_net:{}".format(self.parent_net.state_dict()['fc.2.bias']))
         reward, frames = evaluate(self.parent_net, self.env)
         self.l_best_value = reward
         self.l_best = self.parent_net
@@ -202,6 +202,7 @@ class Particle:
     def evolve_particle(self):
         # mp.set_start_method('spawn')
         input_m = []
+        self.logger.debug("in evolve_particle self.population:{}".format(self.population))
         self.logger.debug("in evolve_particle,self.parent_net['fc.2.bias']".format(self.parent_net.state_dict()['fc.2.bias']))
         for _ in range(self.population):
             seed = np.random.randint(MAX_SEED)
