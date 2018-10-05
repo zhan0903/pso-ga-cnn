@@ -206,15 +206,15 @@ class Particle:
         # mp.set_start_method('spawn')
         input_m = []
         self.logger.debug("in evolve_particle self.population:{}".format(self.population))
-        self.logger.debug("in evolve_particle,self.parent_net['fc.2.bias']".
+        self.logger.debug("in evolve_particle,self.parent_net['fc.2.bias']:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         net_test = self.return_parent_net()
-        self.logger.debug("in evolve_particle,net_test['fc.2.bias']".
+        self.logger.debug("in evolve_particle,net_test['fc.2.bias']:{}".
                           format(net_test.state_dict()['fc.2.bias']))
         for _ in range(self.population):
             seed = np.random.randint(MAX_SEED)
             parent_net = self.parent_net.state_dict()
-            self.logger.debug("parent_net[0]['fc.2.bias']:".format(parent_net['fc.2.bias']))
+            self.logger.debug("parent_net[0]['fc.2.bias']:{}".format(parent_net['fc.2.bias']))
 
             input_m.append((seed, parent_net, self.game, self.device))
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
@@ -303,7 +303,6 @@ class ParticleSwarm:
             self.logger.debug("in init_swarm before:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
             particle.update_g_best(self.best_net)
             self.logger.debug("in init_swarm after:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
-
 
     # find the new best global among all particle
     def evolve_swarm(self):
