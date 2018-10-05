@@ -348,7 +348,7 @@ class ParticleSwarm:
             if self.results[0][1] > self.best_score:
                 self.best_net = self.result[0][0]
                 self.best_score = self.result[0][1]
-        self.logger.info("time cost:{}".format((time.time()-time_start)/60)
+        self.logger.info("time cost:{}".format((time.time()-time_start)/60))
 
 
 def main(**exp):
