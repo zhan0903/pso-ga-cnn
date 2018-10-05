@@ -234,7 +234,7 @@ class Particle:
         pool = mp.Pool(self.max_process)
         # for i in range(self.population):
         # (seed, reward, frames)
-        result = pool.map_async(work_func, input_m)
+        result = pool.map(work_func, input_m)
         pool.close()
         pool.join()
 
