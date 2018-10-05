@@ -202,6 +202,7 @@ class Particle:
     def evolve_particle(self):
         # mp.set_start_method('spawn')
         input_m = []
+        self.logger.debug("in evolve_particle,self.parent_net['fc.2.bias']".format(self.parent_net.state_dict()['fc.2.bias']))
         for _ in range(self.population):
             seed = np.random.randint(MAX_SEED)
             parent_net = self.parent_net.state_dict()
