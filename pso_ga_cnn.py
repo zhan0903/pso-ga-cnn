@@ -314,7 +314,7 @@ class ParticleSwarm:
             self.results = []
             self.logger.debug("self.p_input:{}".format(self.p_input))
             for particle in self.p_input:
-                self.logger.debug("particle:{}".format(particle))
+                self.logger.debug("in evolve_swarm, particle:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
                 result = particle.evolve_particle()
                 self.results.append(result)
 
