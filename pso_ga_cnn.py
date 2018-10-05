@@ -103,13 +103,13 @@ def work_func(input_w):
     parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n)
     parent_net_w.load_state_dict(parent_net)
     child_net = mutate_net(parent_net_w, seed_w, device)
-    reward, frames = evaluate(child_net, env_w).to(device)
+    reward, frames = evaluate(child_net, env_w)
     result = (seed_w, reward, frames)
     return result
 
 
 class Particle:
-    def __init__(self, population=10, device='cpu', game="PongNoFrameskip-v4"):
+    def __init__(self, logger, population=10, device='cpu', game="PongNoFrameskip-v4"):
         self.population = population
         self.mutation_step = 0.005
         self.game = game
@@ -121,6 +121,7 @@ class Particle:
         self.l_best_value = None
         self.parent_net = None
         self.env = make_env(self.game)
+        self.logger = logger
         # self.init_uniform_parent()
 
     def create_uniform_parent(self):
@@ -205,6 +206,8 @@ class Particle:
             parent_net = self.parent_net.state_dict()
             input_m.append((seed, parent_net, self.game, self.device))
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
+
+        self.logger.debug("parent_net[0]['fc.2.bias']:".format(parent_net[0]['fc.2.bias']))
         pool = mp.Pool(self.population)
         # (seed, reward, frames)
         result = pool.map(work_func, input_m)
@@ -270,7 +273,7 @@ class ParticleSwarm:
             #         np.random.uniform(low=-1, high=1, size=p.data.size()).astype(np.float32))
             #     p.data += re_distribution
             # init_position = particle_position.state_dict()
-            p = Particle(device=device, population=self.population, game=self.game)
+            p = Particle(logger=self.logger, device=device, population=self.population, game=self.game)
             self.p_input.append(p)
 
     def init_swarm(self):
