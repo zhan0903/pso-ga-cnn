@@ -67,13 +67,13 @@ def work_func(self, seed):
     return result
 
 
-def evaluate(net, env_e):
+def evaluate(net, device,env_e):
     frames = 0
     # env_e = make_env(game)
     obs = env_e.reset()
     reward = 0.0
     while True:
-        obs_v = torch.FloatTensor([np.array(obs, copy=False)])
+        obs_v = torch.FloatTensor([np.array(obs, copy=False)]).to(device)
         act_prob = net(obs_v)
         acts = act_prob.max(dim=1)[1]
         obs, r, done, _ = env_e.step(acts.data.cpu().numpy()[0])
@@ -87,11 +87,14 @@ def evaluate(net, env_e):
 def mutate_net(net, seed, device, copy_net=True):
     new_net = copy.deepcopy(net) if copy_net else net
     # np.random.seed(seed)
-    print("in mutate_net, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
+    print("in mutate_net,Before, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
     for p in new_net.parameters():
         np.random.seed(seed)
         noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
         p.data += mutation_step * noise_t
+
+    print("in mutate_net,After, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
+
     return new_net
 
 
@@ -106,7 +109,7 @@ def work_func(input_w):
     # print("in work_func, parent_net:{}".format(parent_net['fc.2.bias']))
     parent_net_w.load_state_dict(parent_net)
     child_net = mutate_net(parent_net_w.to(device), seed_w, device, copy_net=False)#.to(device)
-    reward, frames = evaluate(child_net, env_w).to(device)
+    reward, frames = evaluate(child_net, device, env_w)#.to(device)
     result = (seed_w, reward, frames)
     return result
 
