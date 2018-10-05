@@ -100,7 +100,7 @@ def work_func(input_w):
     game = input_w[2]
     device = input_w[3]
     env_w = make_env(game)
-    parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n).to(device)
+    parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n)
     parent_net_w.load_state_dict(parent_net)
     child_net = mutate_net(parent_net_w, seed_w, device)
     reward, frames = evaluate(child_net, env_w).to(device)
@@ -174,7 +174,7 @@ class Particle:
         # self.mutate_net(seed,copy_net=False)
         net = Net(self.env.observation_space.shape, self.env.action_space.shape).to(self.device)
         for seed in seeds[1:]:
-            net = self.mutate_net(net, seed, copy_net=False)
+            net = self.mutate_net(net, seed, self.device, copy_net=False)
         return net
 
     # def build_net(self,seeds):
