@@ -135,9 +135,6 @@ class Particle:
     def update_g_best(self, g_best_net):
         self.g_best = g_best_net
 
-    def return_parent_net(self):
-        return self.parent_net
-
     def build_g_best(self, seeds):
         torch.manual_seed(seeds[0])
         # self.mutate_net(seed,copy_net=False)
@@ -221,7 +218,7 @@ class ParticleSwarm:
         self.p_input = []
         self.frames = None
 
-    # create particles with different device
+    # init particles
     def create_swarm(self):
         gpu_number = torch.cuda.device_count()
         # seed = np.random.randint(MAX_SEED)
@@ -232,6 +229,7 @@ class ParticleSwarm:
 
         for u in range(self.swarm_size):
             # seed = np.random.randint(MAX_SEED)
+            # loc = -5
             if gpu_number == 0:
                 device = "cpu"
             else:
@@ -243,7 +241,7 @@ class ParticleSwarm:
 
     def init_swarm(self):
         for particle in self.p_input:
-            # parent_net, reward, frame
+            # parent_net, reward, frame, create_uniform_parent
             result = particle.create_uniform_parent()
             self.results.append(result)
 
@@ -270,8 +268,6 @@ class ParticleSwarm:
             self.logger.debug("self.p_input:{}".format(self.p_input))
             for particle in self.p_input:
                 self.logger.debug("in evolve_swarm, particle:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
-                self.logger.debug("in evolve_swarm, return particle:{}".format(particle.return_parent_net().state_dict()['fc.2.bias']))
-
                 result = particle.evolve_particle()
                 self.results.append(result)
 

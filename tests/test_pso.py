@@ -35,13 +35,14 @@ def test_evolve_swarm():
 
 @pytest.mark.evolve_one
 def test_one_evolve():
-    algorithm = Algorithm(swarm_size=4)
+    algorithm = Algorithm(swarm_size=4, frame_limit=10000)
     algorithm.evolve_swarm()
 
 
 @pytest.mark.evolve_two
 def test_two_evolve():
-    pass
+    algorithm = Algorithm(swarm_size=4)
+    algorithm.evolve_swarm()
 
 
 @pytest.mark.evolve_three
