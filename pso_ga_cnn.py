@@ -89,7 +89,7 @@ def mutate_net(net, seed, device, copy_net=True):
     # np.random.seed(seed)
     for p in new_net.parameters():
         np.random.seed(seed)
-        noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
+        noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32))#.to(device)
         p.data += mutation_step * noise_t
     return new_net
 
@@ -101,9 +101,9 @@ def work_func(input_w):
     device = input_w[3]
     env_w = make_env(game)
     parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n)
-    parent_net_w.load_state_dict(parent_net)
-    child_net = mutate_net(parent_net_w, seed_w, device)
-    reward, frames = evaluate(child_net, env_w)
+    parent_net_w.load_state_dict(parent_net).to(device)
+    child_net = mutate_net(parent_net_w, seed_w, device, copy_net=False).to(device)
+    reward, frames = evaluate(child_net, env_w).to(device)
     result = (seed_w, reward, frames)
     return result
 
@@ -214,7 +214,7 @@ class Particle:
         for _ in range(self.population):
             seed = np.random.randint(MAX_SEED)
             parent_net = self.parent_net.state_dict()
-            self.logger.debug("parent_net[0]['fc.2.bias']:{}".format(parent_net['fc.2.bias']))
+            # self.logger.debug("parent_net[0]['fc.2.bias']:{}".format(parent_net['fc.2.bias']))
 
             input_m.append((seed, parent_net, self.game, self.device))
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
