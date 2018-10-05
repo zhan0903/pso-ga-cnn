@@ -90,7 +90,7 @@ def mutate_net(net, seed, device, copy_net=True):
     print("in mutate_net, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
     for p in new_net.parameters():
         np.random.seed(seed)
-        noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32))#.to(device)
+        noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
         p.data += mutation_step * noise_t
     return new_net
 
@@ -105,7 +105,7 @@ def work_func(input_w):
     # print("in work_fun,device:{}".format(device))
     # print("in work_func, parent_net:{}".format(parent_net['fc.2.bias']))
     parent_net_w.load_state_dict(parent_net)
-    child_net = mutate_net(parent_net_w.to(device), seed_w, device, copy_net=False).to(device)
+    child_net = mutate_net(parent_net_w.to(device), seed_w, device, copy_net=False)#.to(device)
     reward, frames = evaluate(child_net, env_w).to(device)
     result = (seed_w, reward, frames)
     return result
