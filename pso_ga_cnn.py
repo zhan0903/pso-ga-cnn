@@ -15,6 +15,7 @@ import logging
 
 
 MAX_SEED = 2**32 - 1
+mutation_step = 0.005
 
 
 def dim_weights(model):
@@ -59,6 +60,54 @@ class Net(nn.Module):
 OutputItem = collections.namedtuple('OutputItem', field_names=['top_children_p', 'frames','position'])
 
 
+def work_func(self, seed):
+    child_net = self.mutate_net(self.parent_net, seed)
+    reward, frames = self.evaluate(child_net)
+    result = (seed, reward, frames)
+    return result
+
+
+def evaluate(net, env_e):
+    frames = 0
+    # env_e = make_env(game)
+    obs = env_e.reset()
+    reward = 0.0
+    while True:
+        obs_v = torch.FloatTensor([np.array(obs, copy=False)])
+        act_prob = net(obs_v)
+        acts = act_prob.max(dim=1)[1]
+        obs, r, done, _ = env_e.step(acts.data.cpu().numpy()[0])
+        reward += r
+        frames += 4
+        if done:
+            break
+    return reward, frames
+
+
+def mutate_net(net, seed, copy_net=True):
+    new_net = copy.deepcopy(net) if copy_net else net
+    # np.random.seed(seed)
+    for p in new_net.parameters():
+        np.random.seed(seed)
+        noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32))
+        p.data += mutation_step * noise_t
+    return new_net
+
+
+def work_func(input_w):
+    seed_w = input_w[0]
+    parent_net = input_w[1]
+    game = input_w[2]
+    device = input_w[3]
+    env_w = make_env(game)
+    parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n).to(device)
+    parent_net_w.load_state_dict(parent_net)
+    child_net = mutate_net(parent_net_w, seed_w).to(device)
+    reward, frames = evaluate(child_net, env_w).to(device)
+    result = (seed_w, reward, frames)
+    return result
+
+
 class Particle:
     def __init__(self, population=10, device='cpu', game="PongNoFrameskip-v4"):
         self.population = population
@@ -87,39 +136,39 @@ class Particle:
         self.l_best = self.parent_net
         return self.parent_net, reward, frames
 
-    def evaluate(self, net):
-        frames = 0
-        env_e = make_env(self.game)
-        obs = env_e.reset()
-        reward = 0.0
-        while True:
-            obs_v = torch.FloatTensor([np.array(obs, copy=False)]).to(self.device)
-            act_prob = net(obs_v).to(self.device)
-            acts = act_prob.max(dim=1)[1]
-            obs, r, done, _ = env_e.step(acts.data.cpu().numpy()[0])
-            reward += r
-            frames += 4
-            if done:
-                break
-        return reward, frames
+    # def evaluate(self, net):
+    #     frames = 0
+    #     env_e = make_env(self.game)
+    #     obs = env_e.reset()
+    #     reward = 0.0
+    #     while True:
+    #         obs_v = torch.FloatTensor([np.array(obs, copy=False)]).to(self.device)
+    #         act_prob = net(obs_v).to(self.device)
+    #         acts = act_prob.max(dim=1)[1]
+    #         obs, r, done, _ = env_e.step(acts.data.cpu().numpy()[0])
+    #         reward += r
+    #         frames += 4
+    #         if done:
+    #             break
+    #     return reward, frames
 
     def update_g_best(self, g_best_net):
         self.g_best = g_best_net
 
-    def work_func(self, seed):
-        child_net = self.mutate_net(self.parent_net, seed)
-        reward, frames = self.evaluate(child_net)
-        result = (seed, reward, frames)
-        return result
+    # def work_func(self, seed):
+    #     child_net = self.mutate_net(self.parent_net, seed)
+    #     reward, frames = self.evaluate(child_net)
+    #     result = (seed, reward, frames)
+    #     return result
 
-    def mutate_net(self, net, seed, copy_net=True):
-        new_net = copy.deepcopy(net) if copy_net else net
-        # np.random.seed(seed)
-        for p in new_net.parameters():
-            np.random.seed(seed)
-            noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(self.device)
-            p.data += self.mutation_step * noise_t
-        return new_net
+    # def mutate_net(self, net, seed, copy_net=True):
+    #     new_net = copy.deepcopy(net) if copy_net else net
+    #     # np.random.seed(seed)
+    #     for p in new_net.parameters():
+    #         np.random.seed(seed)
+    #         noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(self.device)
+    #         p.data += self.mutation_step * noise_t
+    #     return new_net
 
     def build_g_best(self, seeds):
         torch.manual_seed(seeds[0])
@@ -151,10 +200,15 @@ class Particle:
     # just evolve 1 generation to find the best child
     def evolve_particle(self):
         # mp.set_start_method('spawn')
-        input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
+        input_m = []
+        for _ in range(self.population):
+            seed = np.random.randint(MAX_SEED)
+            parent_net = self.parent_net.state_dict()
+            input_m.append((seed,parent_net,self.game,self.device))
+        # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
         pool = mp.Pool(self.population)
         # (seed, reward, frames)
-        result = pool.map(self.work_func, input_m)
+        result = pool.map(work_func, input_m)
         pool.close()
         pool.join()
 
