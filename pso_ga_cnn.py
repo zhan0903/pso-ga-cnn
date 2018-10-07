@@ -56,7 +56,7 @@ class Net(nn.Module):
 OutputItem = collections.namedtuple('OutputItem', field_names=['top_children_p', 'frames','position'])
 
 
-def evaluate(net, device,env_e):
+def evaluate(net, device, env_e):
     frames = 0
     # env_e = make_env(game)
     obs = env_e.reset()
@@ -82,7 +82,6 @@ def mutate_net(net, seed, device, copy_net=True):
         noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
         p.data += mutation_step * noise_t
 
-    # print("in mutate_net,After, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
     return new_net
 
 
@@ -103,26 +102,27 @@ def work_func(input_w):
 
 
 class Particle:
-    def __init__(self, logger, population=10, device='cpu', game="PongNoFrameskip-v4"):
+    def __init__(self, logger, g_best=None, g_best_value=None, l_best_value=None, l_best=None, parent_net=None,
+                 population=10, device='cpu', game="PongNoFrameskip-v4"):
         self.population = population
         self.mutation_step = 0.005
         self.game = game
         self.device = device
-        self.g_best = None
-        self.g_best_value = None
+        self.g_best = g_best
+        self.g_best_value = g_best_value
         # self.l_best_seed = None
-        self.l_best = None
-        self.l_best_value = None
-        self.parent_net = None
+        self.l_best = l_best
+        self.l_best_value = l_best_value
+        self.parent_net = parent_net
         self.env = make_env(self.game)
         self.logger = logger
         self.max_process = mp.cpu_count()
         # self.init_uniform_parent()
 
     def create_uniform_parent(self):
-        self.parent_net = Net(self.env.observation_space.shape, self.env.action_space.n).to(self.device)
+        self.parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)#.to(self.device)
         for p in self.parent_net.parameters():
-            re_distribution = torch.tensor(np.random.uniform(low=-2, high=2, size=p.data.size()).astype(np.float32)).to(self.device)
+            re_distribution = torch.tensor(np.random.uniform(low=-2, high=2, size=p.data.size()).astype(np.float32))#.to(self.device)
             p.data += re_distribution
 
         # self.parent_net = parent_net
@@ -132,15 +132,16 @@ class Particle:
         self.l_best = self.parent_net
         return self.parent_net, reward, frames
 
-    def update_g_best(self, g_best_net):
+    def update_g_best(self, g_best_net, g_best_score):
         self.g_best = g_best_net
+        self.g_best_value = g_best_score
 
     def build_g_best(self, seeds):
         torch.manual_seed(seeds[0])
         # self.mutate_net(seed,copy_net=False)
-        net = Net(self.env.observation_space.shape, self.env.action_space.shape).to(self.device)
+        net = Net(self.env.observation_space.shape, self.env.action_space.shape)#.to(self.device)
         for seed in seeds[1:]:
-            net = self.mutate_net(net, seed, self.device, copy_net=False)
+            net = mutate_net(net, seed, device="cpu", copy_net=False)
         return net
 
     # update particle's position
@@ -165,19 +166,39 @@ class Particle:
         #                   format(net_test.state_dict()['fc.2.bias']))
 
         # population == tasks number
-        for _ in range(self.population):
+        gpu_number = torch.cuda.device_count()
+        # seed = np.random.randint(MAX_SEED)
+
+        # if gpu_number >= 1:
+        #     for i in range(gpu_number):
+        #         self.devices.append("cuda:{0}".format(i))
+        #
+        # for u in range(self.swarm_size):
+        #     # seed = np.random.randint(MAX_SEED)
+        #     # loc = -5
+        #     if gpu_number == 0:
+        #         device = "cpu"
+        #     else:
+        #         device_id = u % gpu_number
+        #         device = self.devices[device_id]
+
+        for u in range(self.population):
+            if gpu_number == 0:
+                device = "cpu"
+            else:
+                device_id = u % gpu_number
+                device = self.devices[device_id]
+
             seed = np.random.randint(MAX_SEED)
             parent_net = self.parent_net.state_dict()
             # self.logger.debug("parent_net[0]['fc.2.bias']:{}".format(parent_net['fc.2.bias']))
-
-            input_m.append((seed, parent_net, self.game, self.device))
+            input_m.append((seed, parent_net, self.game, device))
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
 
         # self.logger.debug("parent_net[0]['fc.2.bias']:".format(input_m[0][1]['fc.2.bias']))
         self.logger.debug("cpu_count:{}".format(mp.cpu_count()))
 
         pool = mp.Pool(self.max_process)
-        # for i in range(self.population):
         # (seed, reward, frames) map->map_aync
         result = pool.map(work_func, input_m)
         pool.close()
@@ -199,7 +220,8 @@ def update_particle(particle):
 
 
 class ParticleSwarm:
-    def __init__(self, frames_limit=100000, swarm_size=2, game="PongNoFrameskip-v4", population=20, chi=0.72984, phi_p=2.05, phi_g=2.05,logger=None):
+    def __init__(self, frames_limit=100000, swarm_size=2, game="PongNoFrameskip-v4", population=20,
+                 chi=0.72984, phi_p=2.05, phi_g=2.05, logger=None):
         self.swarm_size = swarm_size
         self.chi = chi
         self.phi_p = phi_p
@@ -216,56 +238,73 @@ class ParticleSwarm:
         self.results = []
         self.devices = []
         self.p_input = []
-        self.frames = None
+        self.frames = 0
+        self.env = make_env(game)
 
-    # init particles
-    def create_swarm(self):
+    def init_swarm(self):
+        devices = []
         gpu_number = torch.cuda.device_count()
         # seed = np.random.randint(MAX_SEED)
 
         if gpu_number >= 1:
             for i in range(gpu_number):
-                self.devices.append("cuda:{0}".format(i))
+                devices.append("cuda:{0}".format(i))
+        else:
+            devices = "cpu"
+
+        # create normal parents_net
+        loc = -5
 
         for u in range(self.swarm_size):
-            # seed = np.random.randint(MAX_SEED)
-            # loc = -5
-            if gpu_number == 0:
-                device = "cpu"
-            else:
-                device_id = u % gpu_number
-                device = self.devices[device_id]
+            # create normal parents_net
+            particle_parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)  # .to(self.device)
+            for p in particle_parent_net.parameters():
+                re_distribution = torch.tensor(np.random.normal(loc=loc, size=p.data.size()).astype(np.float32))#.to(device)
+                p.data += re_distribution
+            loc = loc+1
 
-            p = Particle(logger=self.logger, device=device, population=self.population, game=self.game)
+            # self.parent_net = parent_net
+            self.logger.debug("in init_swarm, create_normal_parent, particle_parent_net:{}".
+                              format(particle_parent_net.state_dict()['fc.2.bias']))
+            reward, frames = evaluate(particle_parent_net, "cpu", self.env)
+            self.frames = self.frames+frames
+            if self.best_score is None:
+                self.best_score = reward
+
+            if reward > self.best_score:
+                self.best_score = reward
+                self.best_net = copy.deepcopy(particle_parent_net)
+            l_best_value = reward
+            l_best = particle_parent_net
+
+            p = Particle(logger=self.logger, device=devices, l_best_value=l_best_value, l_best=l_best,
+                         parent_net=particle_parent_net, population=self.population, game=self.game)
             self.p_input.append(p)
 
-    def init_swarm(self):
-        for particle in self.p_input:
-            # parent_net, reward, frame, create_uniform_parent
-            result = particle.create_uniform_parent()
-            self.results.append(result)
+        # for particle in self.p_input:
+        #     # parent_net, reward, frame, create_uniform_parent
+        #     result = particle.create_uniform_parent()
+        #     self.results.append(result)
 
-        self.results.sort(key=lambda p: p[1], reverse=True)
-        self.frames = sum([pair[2] for pair in self.results])
-        self.best_score = self.results[0][1]
-        self.best_net = self.results[0][0]
+        # self.results.sort(key=lambda p: p[1], reverse=True)
+        # self.frames = sum([pair[2] for pair in self.results])
+        # self.best_score = self.results[0][1]
+        # self.best_net = self.results[0][0]
 
         for particle in self.p_input:
-            self.logger.debug("in init_swarm before:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
-            particle.update_g_best(self.best_net)
-            self.logger.debug("in init_swarm after:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
+            # self.logger.debug("in init_swarm before:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
+            particle.update_g_best(self.best_net, self.best_score)
+            # self.logger.debug("in init_swarm after:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
 
     # find the new best global among all particle
     def evolve_swarm(self):
-        # init particle create device
-        self.create_swarm()
         # particle = Particle(population=10)
         self.init_swarm()
         time_start = time.time()
         while self.frames < self.frames_limit:
             # evolve particle
             self.results = []
-            self.logger.debug("self.p_input:{}".format(self.p_input))
+            # self.logger.debug("self.p_input:{}".format(self.p_input))
             for particle in self.p_input:
                 self.logger.debug("in evolve_swarm, particle:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
                 result = particle.evolve_particle()
