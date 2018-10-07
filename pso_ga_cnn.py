@@ -119,19 +119,6 @@ class Particle:
         self.max_process = mp.cpu_count()
         # self.init_uniform_parent()
 
-    # def create_uniform_parent(self):
-    #     self.parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)#.to(self.device)
-    #     for p in self.parent_net.parameters():
-    #         re_distribution = torch.tensor(np.random.uniform(low=-2, high=2, size=p.data.size()).astype(np.float32))#.to(self.device)
-    #         p.data += re_distribution
-    #
-    #     # self.parent_net = parent_net
-    #     self.logger.debug("create_uniform_parent, parent_net:{}".format(self.parent_net.state_dict()['fc.2.bias']))
-    #     reward, frames = evaluate(self.parent_net, self.device, self.env)
-    #     self.l_best_value = reward
-    #     self.l_best = self.parent_net
-    #     return self.parent_net, reward, frames
-
     def update_g_best(self, g_best_net, g_best_score):
         self.g_best = g_best_net
         self.g_best_value = g_best_score
@@ -173,8 +160,8 @@ class Particle:
             seed = np.random.randint(MAX_SEED)
             # parent_net = self.parent_net.state_dict()
             # self.logger.debug("parent_net[0]['fc.2.bias']:{}".format(parent_net['fc.2.bias']))
-            # input_m.append((seed, self.parent_net.state_dict(), self.game, device))
-            input_m.append((seed, 1, self.game, device))
+            input_m.append((seed, self.parent_net.state_dict(), self.game, device))
+            # input_m.append((seed, 1, self.game, device))
 
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
 
