@@ -103,11 +103,11 @@ def work_func(input_w):
 
 class Particle:
     def __init__(self, logger, g_best=None, g_best_value=None, l_best_value=None, l_best=None, parent_net=None,
-                 population=10, device='cpu', game="PongNoFrameskip-v4"):
+                 population=10, devices='cpu', game="PongNoFrameskip-v4"):
         self.population = population
         self.mutation_step = 0.005
         self.game = game
-        self.device = device
+        self.devices = devices
         self.g_best = g_best
         self.g_best_value = g_best_value
         # self.l_best_seed = None
@@ -119,18 +119,18 @@ class Particle:
         self.max_process = mp.cpu_count()
         # self.init_uniform_parent()
 
-    def create_uniform_parent(self):
-        self.parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)#.to(self.device)
-        for p in self.parent_net.parameters():
-            re_distribution = torch.tensor(np.random.uniform(low=-2, high=2, size=p.data.size()).astype(np.float32))#.to(self.device)
-            p.data += re_distribution
-
-        # self.parent_net = parent_net
-        self.logger.debug("create_uniform_parent, parent_net:{}".format(self.parent_net.state_dict()['fc.2.bias']))
-        reward, frames = evaluate(self.parent_net, self.device, self.env)
-        self.l_best_value = reward
-        self.l_best = self.parent_net
-        return self.parent_net, reward, frames
+    # def create_uniform_parent(self):
+    #     self.parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)#.to(self.device)
+    #     for p in self.parent_net.parameters():
+    #         re_distribution = torch.tensor(np.random.uniform(low=-2, high=2, size=p.data.size()).astype(np.float32))#.to(self.device)
+    #         p.data += re_distribution
+    #
+    #     # self.parent_net = parent_net
+    #     self.logger.debug("create_uniform_parent, parent_net:{}".format(self.parent_net.state_dict()['fc.2.bias']))
+    #     reward, frames = evaluate(self.parent_net, self.device, self.env)
+    #     self.l_best_value = reward
+    #     self.l_best = self.parent_net
+    #     return self.parent_net, reward, frames
 
     def update_g_best(self, g_best_net, g_best_score):
         self.g_best = g_best_net
@@ -277,7 +277,7 @@ class ParticleSwarm:
             l_best_value = reward
             l_best = particle_parent_net
 
-            p = Particle(logger=self.logger, device=devices, l_best_value=l_best_value, l_best=l_best,
+            p = Particle(logger=self.logger, devices=devices, l_best_value=l_best_value, l_best=l_best,
                          parent_net=particle_parent_net, population=self.population, game=self.game)
             self.p_input.append(p)
 
