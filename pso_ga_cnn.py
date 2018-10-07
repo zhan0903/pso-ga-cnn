@@ -167,7 +167,10 @@ class Particle:
 
         # self.logger.debug("parent_net[0]['fc.2.bias']:".format(input_m[0][1]['fc.2.bias']))
         # self.logger.debug("cpu_count:{}".format(mp.cpu_count()))
-        self.logger.debug("self.max_process:{}".format(self.max_process))
+        self.logger.debug("in evolve_particle, len(input_m):{}".format(len(input_m)))
+        # self.logger.debug("in evolve_particle, parent_net:{}".format(len(input_m)))
+
+        self.logger.debug("in evolve_particle, self.max_process:{}".format(self.max_process))
         pool = mp.Pool(self.max_process)
         # (seed, reward, frames) map->map_aync
         result = pool.map(work_func, input_m)
