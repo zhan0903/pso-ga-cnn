@@ -172,7 +172,7 @@ class Particle:
         # self.logger.debug("in evolve_particle, parent_net:{}".format(len(input_m)))
 
         self.logger.debug("in evolve_particle, self.max_process:{}".format(self.max_process))
-        pool = mp.Pool(self.max_process/2)
+        pool = mp.Pool(int(self.max_process/2))
         # (seed, reward, frames) map->map_aync
         result = pool.map(work_func, input_m)
         pool.close()
