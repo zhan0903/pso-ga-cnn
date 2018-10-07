@@ -90,6 +90,11 @@ def work_func(input_w):
     parent_net = input_w[1]
     game = input_w[2]
     device = input_w[3]
+
+    if device != "cpu":
+        device_w_id = int(device[-1])
+        torch.cuda.set_device(device_w_id)
+
     env_w = make_env(game)
     parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n)
     # print("in work_fun,device:{}".format(device))
