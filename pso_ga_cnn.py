@@ -146,9 +146,10 @@ class Particle:
         # mp.set_start_method('spawn')
         input_m = []
         # self.logger.debug("in evolve_particle self.population:{}".format(self.population))
-        self.logger.debug("in evolve_particle,self.parent_net['fc.2.bias']:{}".
+        self.logger.debug("Before, in evolve_particle,self.parent_net['fc.2.bias']:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
+        self.logger.debug("in evolve_particle, self.devices:{}".format(self.devices))
         # parent_net = self.parent_net.state_dict()
 
         for u in range(self.population):
@@ -171,11 +172,14 @@ class Particle:
         # self.logger.debug("in evolve_particle, parent_net:{}".format(len(input_m)))
 
         self.logger.debug("in evolve_particle, self.max_process:{}".format(self.max_process))
-        pool = mp.Pool(self.max_process)
+        pool = mp.Pool(self.max_process/2)
         # (seed, reward, frames) map->map_aync
         result = pool.map(work_func, input_m)
         pool.close()
         pool.join()
+
+        self.logger.debug("After, in evolve_particle,self.parent_net['fc.2.bias']:{}".
+                          format(self.parent_net.state_dict()['fc.2.bias']))
 
         result.sort(key=lambda p: p[1], reverse=True)
         all_frames = sum([pair[2] for pair in result])
