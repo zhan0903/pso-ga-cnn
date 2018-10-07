@@ -162,28 +162,28 @@ class Particle:
         self.logger.debug("in evolve_particle,self.parent_net['fc.2.bias']:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
-        time
+        # parent_net = self.parent_net.state_dict()
+
         for u in range(self.population):
             if gpu_number == 0:
                 device = "cpu"
             else:
                 device_id = u % gpu_number
                 device = self.devices[device_id]
-
             seed = np.random.randint(MAX_SEED)
-            parent_net = self.parent_net.state_dict()
+            # parent_net = self.parent_net.state_dict()
             # self.logger.debug("parent_net[0]['fc.2.bias']:{}".format(parent_net['fc.2.bias']))
-            input_m.append((seed, parent_net, self.game, device))
+            input_m.append((seed, self.parent_net.state_dict(), self.game, device))
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
 
         # self.logger.debug("parent_net[0]['fc.2.bias']:".format(input_m[0][1]['fc.2.bias']))
         # self.logger.debug("cpu_count:{}".format(mp.cpu_count()))
-
-        with mp.Pool(self.max_process) as pool:
-            # (seed, reward, frames) map->map_aync
-            result = pool.map(work_func, input_m)
-            pool.close()
-            pool.join()
+        self.logger.debug("self.max_process:{}".format(self.max_process))
+        pool = mp.Pool(self.max_process)
+        # (seed, reward, frames) map->map_aync
+        result = pool.map(work_func, input_m)
+        pool.close()
+        pool.join()
 
         result.sort(key=lambda p: p[1], reverse=True)
         all_frames = sum([pair[2] for pair in result])
