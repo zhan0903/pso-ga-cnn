@@ -173,7 +173,9 @@ class Particle:
             seed = np.random.randint(MAX_SEED)
             # parent_net = self.parent_net.state_dict()
             # self.logger.debug("parent_net[0]['fc.2.bias']:{}".format(parent_net['fc.2.bias']))
-            input_m.append((seed, self.parent_net.state_dict(), self.game, device))
+            # input_m.append((seed, self.parent_net.state_dict(), self.game, device))
+            input_m.append((seed, 1, self.game, device))
+
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
 
         # self.logger.debug("parent_net[0]['fc.2.bias']:".format(input_m[0][1]['fc.2.bias']))
