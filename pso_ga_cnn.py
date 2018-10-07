@@ -158,30 +158,11 @@ class Particle:
     def evolve_particle(self):
         # mp.set_start_method('spawn')
         input_m = []
-        self.logger.debug("in evolve_particle self.population:{}".format(self.population))
+        # self.logger.debug("in evolve_particle self.population:{}".format(self.population))
         self.logger.debug("in evolve_particle,self.parent_net['fc.2.bias']:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
-        # net_test = self.return_parent_net()
-        # self.logger.debug("in evolve_particle,net_test['fc.2.bias']:{}".
-        #                   format(net_test.state_dict()['fc.2.bias']))
-
-        # population == tasks number
         gpu_number = torch.cuda.device_count()
-        # seed = np.random.randint(MAX_SEED)
-
-        # if gpu_number >= 1:
-        #     for i in range(gpu_number):
-        #         self.devices.append("cuda:{0}".format(i))
-        #
-        # for u in range(self.swarm_size):
-        #     # seed = np.random.randint(MAX_SEED)
-        #     # loc = -5
-        #     if gpu_number == 0:
-        #         device = "cpu"
-        #     else:
-        #         device_id = u % gpu_number
-        #         device = self.devices[device_id]
-
+        time
         for u in range(self.population):
             if gpu_number == 0:
                 device = "cpu"
@@ -196,13 +177,13 @@ class Particle:
         # input_m = [(np.random.randint(MAX_SEED),) for _ in range(self.population)]
 
         # self.logger.debug("parent_net[0]['fc.2.bias']:".format(input_m[0][1]['fc.2.bias']))
-        self.logger.debug("cpu_count:{}".format(mp.cpu_count()))
+        # self.logger.debug("cpu_count:{}".format(mp.cpu_count()))
 
-        pool = mp.Pool(self.max_process)
-        # (seed, reward, frames) map->map_aync
-        result = pool.map(work_func, input_m)
-        pool.close()
-        pool.join()
+        with mp.Pool(self.max_process) as pool:
+            # (seed, reward, frames) map->map_aync
+            result = pool.map(work_func, input_m)
+            pool.close()
+            pool.join()
 
         result.sort(key=lambda p: p[1], reverse=True)
         all_frames = sum([pair[2] for pair in result])
