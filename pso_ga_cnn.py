@@ -125,12 +125,12 @@ class Particle:
         self.parent_net = copy.deepcopy(parent_net)
         self.env = make_env(self.game)
         self.logger = logger
+        self.velocity = Net(self.env.observation_space.shape, self.env.action_space.shape)
         self.max_process = mp.cpu_count()
         # self.init_uniform_parent()
 
     def update_g_best(self, g_best_net):
         self.g_best = copy.deepcopy(g_best_net)
-        self.update_parent_position()
 
     def build_g_best(self, seeds):
         torch.manual_seed(seeds[0])
@@ -141,25 +141,25 @@ class Particle:
         return net
 
     # update particle's position
-    def update_parent_position(self, g_best_net):
-        # l_best = self.build_net(self.l_best_seed)
-        # g_best = self.build_g_best(g_best_seeds)
-        self.g_best = copy.deepcopy(g_best_net)
-        for p, l, g in self.parent_net.parameters(), self.l_best.parameters(), self.g_best.parameters():
+    def update_parent_position(self):
+        for p, l, g, v in self.parent_net.parameters(), self.l_best.parameters(), \
+                self.g_best.parameters(), self.velocity:
             r_g = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
             r_p = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
-            v = self.chi * (self.phi_p * r_p * (l.data-p.data) + self.phi_g * r_g * (g.data - p.data))
+            v = v*1 + self.chi * (self.phi_p * r_p * (l.data-p.data) + self.phi_g * r_g * (g.data - p.data))
             p.data += v
 
-    # just evolve 1 generation to find the best child
+        reward, frames = evaluate(self.parent_net, self.devices[0], self.env)
+        if reward > self.l_best_value:
+            self.l_best_value = reward
+            self.l_best = copy.deepcopy(self.parent_net)
+
+            # just evolve 1 generation to find the best child
     def evolve_particle(self):
         input_m = []
-        # self.logger.debug("in evolve_particle self.population:{}".format(self.population))
         self.logger.debug("Before, in evolve_particle,self.parent_net['fc.2.bias']:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
-        self.logger.debug("in evolve_particle, self.devices:{}".format(self.devices))
-
         for u in range(self.population):
             if gpu_number == 0:
                 device = "cpu"
@@ -231,9 +231,6 @@ class ParticleSwarm:
             for p in particle_parent_net.parameters():
                 re_distribution = torch.tensor(np.random.normal(loc=loc, size=p.data.size()).astype(np.float32))#.to(device)
                 p.data += re_distribution
-            # if loc == 5:
-            #     loc = -5
-            # else:
             loc = loc + 1
 
             # self.parent_net = parent_net
@@ -286,8 +283,14 @@ class ParticleSwarm:
                 self.best_score = self.result[0][1]
                 # if find a better one, then update particles
                 for particle in self.p_input:
-                    particle.update_parent_position(self.best_net)
+                    particle.update_g_best(self.best_net)
+                    # particle.update_parent_position(self.best_net)
                     # self.update_particle(particle)
+            # else:# random mutate particle parent
+            for particle in self.p_input:
+                particle.update_parent_position()
+
+
 
             self.logger.info("best core:{}".format(self.best_score))
         self.logger.info("time cost:{}".format((time.time()-time_start)/60))
