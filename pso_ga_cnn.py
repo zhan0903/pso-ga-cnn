@@ -109,7 +109,7 @@ def work_func(input_w):
 
 
 class Particle:
-    def __init__(self, logger, g_best=None, l_best_value=None, l_best=None, parent_net=None,
+    def __init__(self, logger, g_best=None, l_best_value=None, l_best=None, parent_net=None, velocity=None,
                  population=10, devices='cpu', chi=0.72984, phi_p=2.05, phi_g=2.05, game="PongNoFrameskip-v4"):
         self.population = population
         self.chi = chi
@@ -126,7 +126,7 @@ class Particle:
         self.parent_net = copy.deepcopy(parent_net)
         self.env = make_env(self.game)
         self.logger = logger
-        self.velocity = Net(self.env.observation_space.shape, self.env.action_space.shape)
+        self.velocity = velocity
         self.max_process = mp.cpu_count()
         # self.init_uniform_parent()
 
@@ -249,8 +249,9 @@ class ParticleSwarm:
                 self.best_net = copy.deepcopy(particle_parent_net)
             l_best_value = reward
             l_best = particle_parent_net
+            velocity = Net(self.env.observation_space.shape, self.env.action_space.n)
 
-            p = Particle(logger=self.logger, devices=devices, l_best_value=l_best_value, l_best=l_best,
+            p = Particle(logger=self.logger, velocity=velocity, devices=devices, l_best_value=l_best_value, l_best=l_best,
                          parent_net=particle_parent_net, population=self.population, game=self.game)
             self.p_input.append(p)
 
