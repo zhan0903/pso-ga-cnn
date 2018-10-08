@@ -136,20 +136,21 @@ class Particle:
     def update_g_best(self, g_best_net):
         self.g_best = copy.deepcopy(g_best_net)
 
-    def build_g_best(self, seeds):
-        torch.manual_seed(seeds[0])
-        # self.mutate_net(seed,copy_net=False)
-        net = Net(self.env.observation_space.shape, self.env.action_space.shape)#.to(self.device)
-        for seed in seeds[1:]:
-            net = mutate_net(net, seed, device="cpu", copy_net=False)
-        return net
+    # def build_g_best(self, seeds):
+    #     torch.manual_seed(seeds[0])
+    #     # self.mutate_net(seed,copy_net=False)
+    #     net = Net(self.env.observation_space.shape, self.env.action_space.shape)#.to(self.device)
+    #     for seed in seeds[1:]:
+    #         net = mutate_net(net, seed, device="cpu", copy_net=False)
+    #     return net
 
     # update particle's position
     def update_parent_position(self):
         if self.g_best is None:
             self.g_best = self.parent_net
         for p, l, g, v in zip(self.parent_net.parameters(), self.l_best.parameters(),
-                              self.g_best.parameters(), self.velocity):
+                              self.g_best.parameters(), self.velocity.parameters()):
+            self.logger.debug("update_parent_position,p:{0},l:{1},g:{2},v:{3}".format(p, l, g, v))
             r_g = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
             r_p = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
             v = v*1 + self.chi * (self.phi_p * r_p * (l.data-p.data) + self.phi_g * r_g * (g.data - p.data))
