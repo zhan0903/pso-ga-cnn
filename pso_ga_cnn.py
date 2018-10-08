@@ -146,6 +146,8 @@ class Particle:
 
     # update particle's position
     def update_parent_position(self):
+        if self.g_best is None:
+            self.g_best = self.parent_net
         for p, l, g, v in self.parent_net.parameters(), self.l_best.parameters(), \
                 self.g_best.parameters(), self.velocity:
             r_g = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)

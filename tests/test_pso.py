@@ -56,7 +56,7 @@ def test_evolve_swarm():
     mp.set_start_method('spawn')
     swarm = Algorithm(logger=logger)
     # swarm.create_swarm()
-    swarm.init_swarm()
+    # swarm.init_swarm()
     swarm.evolve_swarm()
     assert len(swarm.p_input) == 11
     print("swarm.best_score:{}".format(swarm.best_score))
