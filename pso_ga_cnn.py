@@ -279,12 +279,10 @@ class ParticleSwarm:
             self.results = []
             # self.logger.debug("self.p_input:{}".format(self.p_input))
             for idx, particle in enumerate(self.p_input):
-                self.logger.debug("in evolve_swarm, before, particle idx:{0},particle parent net:{1}".
+                self.logger.debug("in evolve_swarm, particle idx:{0},particle parent net:{1}".
                                   format(idx, particle.parent_net.state_dict()['fc.2.bias']))
                 # self.l_best, self.l_best_value, all_frames
                 result = particle.evolve_particle()
-                self.logger.debug("in evolve_swarm, after, particle idx:{0},particle parent net:{1}".
-                                  format(idx, particle.parent_net.state_dict()['fc.2.bias']))
                 self.results.append(result)
 
             self.results.sort(key=lambda p: p[1], reverse=True)
@@ -305,9 +303,9 @@ class ParticleSwarm:
                 particle.update_parent_position()
 
             self.logger.info("best core:{}".format(self.best_score))
-            self.logger.info("time cost:{}m".format((time.time() - time_start)//60))
+            self.logger.info("time cost:{}ms".format((time.time() - time_start)//60))
 
-        self.logger.info("whole time cost:{}m".format((time.time()-time_start)//60))
+        self.logger.info("whole time cost:{}ms".format((time.time()-time_start)//60))
 
 
 def main(**exp):
