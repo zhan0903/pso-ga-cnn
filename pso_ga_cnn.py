@@ -127,7 +127,7 @@ class Particle:
         self.env = make_env(self.game)
         self.logger = logger
         self.velocity = velocity
-        self.max_process = mp.cpu_count()//4  # mp.cpu_count()
+        self.max_process = mp.cpu_count()  # mp.cpu_count()
         # self.init_uniform_parent()
 
     def update_g_best(self, g_best_net):
@@ -189,7 +189,7 @@ class Particle:
         if self.l_best_value < result[0][1]:
             # self.l_best_seed = result[0][0]
             self.l_best_value = result[0][1]
-            self.l_best = mutate_net(self.parent_net, result[0][0])
+            self.l_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
         return self.l_best, self.l_best_value, all_frames
@@ -294,8 +294,6 @@ class ParticleSwarm:
             # else:# random mutate particle parent
             for particle in self.p_input:
                 particle.update_parent_position()
-
-
 
             self.logger.info("best core:{}".format(self.best_score))
         self.logger.info("time cost:{}".format((time.time()-time_start)/60))
