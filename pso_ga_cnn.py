@@ -148,8 +148,8 @@ class Particle:
     def update_parent_position(self):
         if self.g_best is None:
             self.g_best = self.parent_net
-        for p, l, g, v in self.parent_net.parameters(), self.l_best.parameters(), \
-                self.g_best.parameters(), self.velocity:
+        for p, l, g, v in zip(self.parent_net.parameters(), self.l_best.parameters(),
+                              self.g_best.parameters(), self.velocity):
             r_g = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
             r_p = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
             v = v*1 + self.chi * (self.phi_p * r_p * (l.data-p.data) + self.phi_g * r_g * (g.data - p.data))
