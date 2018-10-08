@@ -1,5 +1,8 @@
 from pso_ga_cnn import ParticleSwarm
 import pytest
+import logging
+import multiprocessing as mp
+import torch
 
 
 class Algorithm(ParticleSwarm):
@@ -20,34 +23,47 @@ def test_create_swarm():
 
 @pytest.mark.init_swarm
 def test_init_swarm():
-    algorithm = Algorithm(swarm_size=4)
-    algorithm.create_swarm()
-    algorithm.init_swarm()
+    logger = logging.getLogger(__name__)
+    fh = logging.FileHandler('./logger.out')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    mp.set_start_method('spawn')
+    swarm = Algorithm(logger=logger)
+    # swarm.create_swarm()
+    swarm.init_swarm()
+    assert len(swarm.p_input) == 11
+    for particle in swarm.p_input:
+        assert swarm.best_score is not None
+        # assert swarm.best_net is not None
+        assert particle is not None
 
-    print(algorithm.results[0])
+        # swarm_best_net = swarm.best_net.state_dict()['fc.2.bias']
+        # particle_best_net = particle.g_best.state_dict()['fc.2.bias']
+        # print("particle_best_net:{}".format(particle_best_net))
+        # print("swarm_best_net:{}".format(swarm_best_net))
+
+        # assert torch.equal(swarm_best_net, particle_best_net)
 
 
 @pytest.mark.evolve_swarm
 def test_evolve_swarm():
-    algorithm = Algorithm(swarm_size=4)
-    algorithm.evolve_swarm()
+    logger = logging.getLogger(__name__)
+    fh = logging.FileHandler('./logger.out')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    mp.set_start_method('spawn')
+    swarm = Algorithm(logger=logger)
+    # swarm.create_swarm()
+    swarm.init_swarm()
+    swarm.evolve_swarm()
+    assert len(swarm.p_input) == 11
+    print("swarm.best_score:{}".format(swarm.best_score))
+    print("swarm.best_")
 
 
-@pytest.mark.evolve_one
-def test_one_evolve():
-    algorithm = Algorithm(swarm_size=4, frame_limit=10000)
-    algorithm.evolve_swarm()
 
-
-@pytest.mark.evolve_two
-def test_two_evolve():
-    algorithm = Algorithm(swarm_size=4)
-    algorithm.evolve_swarm()
-
-
-@pytest.mark.evolve_three
-def test_three_evolve():
-    pass
 
 
 
