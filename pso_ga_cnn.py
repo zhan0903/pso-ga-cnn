@@ -183,7 +183,7 @@ class Particle:
         self.logger.debug("After, in evolve_particle,self.parent_net['fc.2.bias']:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
 
-        assert len(result) == self.population
+        assert len(result) == (self.population+1)
         result.sort(key=lambda p: p[1], reverse=True)
         all_frames = sum([pair[2] for pair in result])
         if self.l_best_value < result[0][1]:
