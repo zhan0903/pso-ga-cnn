@@ -88,7 +88,7 @@ def mutate_net(net, seed, device, copy_net=True):
 
 
 def work_func(input_w):
-    work_id = mp.current_process()
+    # work_id = mp.current_process()
     seed_w = input_w[0]
     game = input_w[1]
     device = input_w[2]
@@ -164,8 +164,7 @@ class Particle:
         # just evolve 1 generation to find the best child
     def evolve_particle(self):
         input_m = []
-        self.logger.debug("Before, in evolve_particle,self.parent_net['fc.2.bias']:{}".
-                          format(self.parent_net.state_dict()['fc.2.bias']))
+
         gpu_number = torch.cuda.device_count()
         for u in range(self.population+1):
             if gpu_number == 0:
@@ -189,9 +188,6 @@ class Particle:
         result = pool.map(work_func, input_m)
         pool.close()
         pool.join()
-
-        self.logger.debug("After, in evolve_particle,self.parent_net['fc.2.bias']:{}".
-                          format(self.parent_net.state_dict()['fc.2.bias']))
 
         assert len(result) == (self.population+1)
         result.sort(key=lambda p: p[1], reverse=True)
@@ -282,10 +278,13 @@ class ParticleSwarm:
             # evolve particle
             self.results = []
             # self.logger.debug("self.p_input:{}".format(self.p_input))
-            for particle in self.p_input:
-                self.logger.debug("in evolve_swarm, particle:{}".format(particle.parent_net.state_dict()['fc.2.bias']))
+            for idx, particle in enumerate(self.p_input):
+                self.logger.debug("in evolve_swarm, before, particle idx:{0},particle parent net:{1}".
+                                  format(idx, particle.parent_net.state_dict()['fc.2.bias']))
                 # self.l_best, self.l_best_value, all_frames
                 result = particle.evolve_particle()
+                self.logger.debug("in evolve_swarm, after, particle idx:{0},particle parent net:{1}".
+                                  format(idx, particle.parent_net.state_dict()['fc.2.bias']))
                 self.results.append(result)
 
             self.results.sort(key=lambda p: p[1], reverse=True)
@@ -306,9 +305,9 @@ class ParticleSwarm:
                 particle.update_parent_position()
 
             self.logger.info("best core:{}".format(self.best_score))
-            self.logger.info("time cost:{}".format((time.time() - time_start)/60))
+            self.logger.info("time cost:{}m".format((time.time() - time_start)//60))
 
-        self.logger.info("whole time cost:{}".format((time.time()-time_start)/60))
+        self.logger.info("whole time cost:{}m".format((time.time()-time_start)//60))
 
 
 def main(**exp):
