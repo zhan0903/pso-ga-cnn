@@ -100,7 +100,7 @@ def work_func(input_w):
         device_w_id = int(device[-1])
         torch.cuda.set_device(device_w_id)
 
-    print("in work_func, device:{},id:{}".format(device, work_id))
+    # print("in work_func, device:{},id:{}".format(device, work_id))
 
     env_w = make_env(game)
     parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n)
@@ -130,7 +130,7 @@ class Particle:
         self.env = make_env(self.game)
         self.logger = logger
         self.velocity = velocity
-        self.max_process = mp.cpu_count()//4  # mp.cpu_count()
+        self.max_process = mp.cpu_count()  # mp.cpu_count()
         # self.init_uniform_parent()
 
     def update_g_best(self, g_best_net):
@@ -171,7 +171,7 @@ class Particle:
                 device_id = u % gpu_number
                 device = self.devices[device_id]
             seed = np.random.randint(MAX_SEED)
-            self.logger.debug("in evolve_paricle,device:{}".format(device))
+            # self.logger.debug("in evolve_paricle,device:{}".format(device))
             input_m.append((seed, self.game, device))
         # evaluate parent net
         input_m.append((None, self.game, self.devices[0]))
