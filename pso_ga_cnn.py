@@ -221,10 +221,10 @@ class ParticleSwarm:
         gpu_number = torch.cuda.device_count()
         # seed = np.random.randint(MAX_SEED)
         if gpu_number >= 1:
-            # for i in range(gpu_number):
-            #     devices.append("cuda:{0}".format(i))
-            for _ in range(gpu_number):
-                devices.append("cuda:{0}".format(1))
+            for i in range(gpu_number):
+                devices.append("cuda:{0}".format(i))
+            # for _ in range(gpu_number):
+            #     devices.append("cuda:{0}".format(1))
         else:
             devices = "cpu"
         # create normal parents_net
