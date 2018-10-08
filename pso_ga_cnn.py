@@ -198,6 +198,7 @@ class Particle:
             self.l_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
+        self.logger.info("best score in paritcle:{}".format(result[0][1]))
         return self.l_best, self.l_best_value, all_frames
 
 
