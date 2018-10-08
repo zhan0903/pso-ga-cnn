@@ -113,8 +113,8 @@ class Particle:
                  population=10, devices='cpu', chi=0.72984, phi_p=2.05, phi_g=2.05, game="PongNoFrameskip-v4"):
         self.population = population
         self.chi = chi
-        self.phi_p=phi_p
-        self.phi_g=phi_g
+        # self.phi_p=phi_p
+        # self.phi_g=phi_g
         self.mutation_step = 0.005
         self.game = game
         self.devices = devices
@@ -161,7 +161,7 @@ class Particle:
         self.logger.debug("Before, in evolve_particle,self.parent_net['fc.2.bias']:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
-        for u in range(self.population+1):
+        for u in range(self.population):
             if gpu_number == 0:
                 device = "cpu"
             else:
