@@ -129,7 +129,7 @@ class Particle:
         self.parent_net = copy.deepcopy(parent_net)
         self.env = make_env(self.game)
         self.logger = logger
-        self.velocity = velocity
+        self.velocity = copy.deepcopy(velocity)
         self.max_process = mp.cpu_count()  # mp.cpu_count()
         # self.init_uniform_parent()
 
@@ -166,17 +166,20 @@ class Particle:
         self.logger.debug("Before, in evolve_particle,self.parent_net['fc.2.bias']:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
-        for u in range(self.population):
+        for u in range(self.population+1):
             if gpu_number == 0:
                 device = "cpu"
             else:
                 device_id = u % gpu_number
                 device = self.devices[device_id]
-            seed = np.random.randint(MAX_SEED)
-            # self.logger.debug("in evolve_paricle,device:{}".format(device))
-            input_m.append((seed, self.game, device))
+            if u == self.population:
+                input_m.append((None, self.game, device))
+            else:
+                seed = np.random.randint(MAX_SEED)
+                # self.logger.debug("in evolve_paricle,device:{}".format(device))
+                input_m.append((seed, self.game, device))
         # evaluate parent net
-        input_m.append((None, self.game, self.devices[0]))
+        # input_m.append((None, self.game, self.devices[0]))
         with open(r"my_trainer_objects.pkl", "wb") as output_file:
             pickle.dump(self.parent_net.state_dict(), output_file, True)
 
