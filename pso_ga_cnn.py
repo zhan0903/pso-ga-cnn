@@ -78,10 +78,11 @@ def mutate_net(net, seed, device, copy_net=True):
     new_net = copy.deepcopy(net) if copy_net else net
     # np.random.seed(seed)
     # print("in mutate_net,Before, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
-    for p in new_net.parameters():
-        np.random.seed(seed)
-        noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
-        p.data += mutation_step * noise_t
+    if seed:
+        for p in new_net.parameters():
+            np.random.seed(seed)
+            noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
+            p.data += mutation_step * noise_t
 
     return new_net
 
@@ -149,18 +150,18 @@ class Particle:
             v = v*1 + self.chi * (self.phi_p * r_p * (l.data-p.data) + self.phi_g * r_g * (g.data - p.data))
             p.data += v
 
-        reward, frames = evaluate(self.parent_net, self.devices[0], self.env)
-        if reward > self.l_best_value:
-            self.l_best_value = reward
-            self.l_best = copy.deepcopy(self.parent_net)
+        # reward, frames = evaluate(self.parent_net, self.devices[0], self.env)
+        # # if reward > self.l_best_value:
+        # #     self.l_best_value = reward
+        # #     self.l_best = copy.deepcopy(self.parent_net)
 
-            # just evolve 1 generation to find the best child
+        # just evolve 1 generation to find the best child
     def evolve_particle(self):
         input_m = []
         self.logger.debug("Before, in evolve_particle,self.parent_net['fc.2.bias']:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
-        for u in range(self.population):
+        for u in range(self.population+1):
             if gpu_number == 0:
                 device = "cpu"
             else:
@@ -168,7 +169,8 @@ class Particle:
                 device = self.devices[device_id]
             seed = np.random.randint(MAX_SEED)
             input_m.append((seed, self.game, device))
-
+        # evaluate parent net
+        input_m.append((None, self.game, self.devices[0]))
         with open(r"my_trainer_objects.pkl", "wb") as output_file:
             pickle.dump(self.parent_net.state_dict(), output_file, True)
 
