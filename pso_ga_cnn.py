@@ -300,7 +300,9 @@ class ParticleSwarm:
                 particle.update_parent_position()
 
             self.logger.info("best core:{}".format(self.best_score))
-        self.logger.info("time cost:{}".format((time.time()-time_start)/60))
+            self.logger.info("time cost:{}".format((time.time() - time_start)/60))
+
+        self.logger.info("whole time cost:{}".format((time.time()-time_start)/60))
 
 
 def main(**exp):
