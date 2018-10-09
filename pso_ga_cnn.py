@@ -107,7 +107,7 @@ def work_func(input_w):
     parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n)
     parent_net_w.load_state_dict(parent_net)
     # print("in work_func,parent_net:{}".format(parent_net_w.state_dict()['fc.2.bias']))
-    print("in work_func,seed_w:{}".format(seed_w))
+    # print("in work_func,seed_w:{}".format(seed_w))
 
     child_net = mutate_net(parent_net_w.to(device), seed_w, device, copy_net=False)
     reward, frames = evaluate(child_net, device, env_w)
