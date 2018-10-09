@@ -166,7 +166,7 @@ class Particle:
     #     return net
 
     # update particle's position
-    def update_parent_position(self):
+    def update_position(self):
         if self.g_best is None:
             self.g_best = self.parent_net
         for p, l, g, v in zip(self.parent_net.parameters(), self.l_best.parameters(),
@@ -218,7 +218,7 @@ class Particle:
         pool.close()
         pool.join()
 
-        assert len(result) == (self.population)
+        assert len(result) == self.population
         result.sort(key=lambda p: p[1], reverse=True)
         all_frames = sum([pair[2] for pair in result])
         if self.l_best_value < result[0][1]:
@@ -330,7 +330,7 @@ class ParticleSwarm:
                     # self.update_particle(particle)
             # else:# random mutate particle parent
             for particle in self.p_input:
-                particle.update_parent_position()
+                particle.update_position()
 
             self.logger.info("best core:{}".format(self.best_score))
             self.logger.info("time cost:{}ms".format((time.time() - time_start)//60))
