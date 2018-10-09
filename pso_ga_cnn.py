@@ -123,7 +123,7 @@ class Particle:
         self.chi = chi
         self.phi_p = phi_p
         self.phi_g = phi_g
-        self.mutation_step = 0.005
+        # self.mutation_step = 0.005
         self.game = game
         self.devices = devices
         self.g_best = g_best
@@ -254,7 +254,6 @@ class ParticleSwarm:
                 p.data += re_distribution
             if loc == loc_limit:
                 loc = -loc_limit
-
             loc = loc + 1
 
             # self.parent_net = parent_net
