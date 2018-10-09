@@ -1,7 +1,7 @@
 {
     "games": "PongNoFrameskip-v4",
     "swarm_size": 11,
-    "population_per_worker": 500,
+    "population_per_worker": 800,
     "frames_limit": "500M",
     "debug": 0,
     "comments": "10/6 version pso+ga+cnn,standard normal,loc=[-5,-4,-3,-2,-1,0,1,2,3,4,5]"

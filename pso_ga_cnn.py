@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import copy
 import ptan
-import multiprocessing as mp
-# import torch.multiprocessing as mp
+# import multiprocessing as mp
+import torch.multiprocessing as mp
 import time
 import collections
 import gym.spaces
@@ -105,9 +105,12 @@ def work_func(input_w):
     env_w = make_env(game)
     parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n)
     parent_net_w.load_state_dict(parent_net)
+    print("in work_func,parent_net:{}".format(parent_net_w.state_dict()['fc.2.bias']))
+
     child_net = mutate_net(parent_net_w.to(device), seed_w, device, copy_net=False)
     reward, frames = evaluate(child_net, device, env_w)
     result = (seed_w, reward, frames)
+    print("in work_func,reward:{}".format(reward))
     return result
 
 
@@ -164,7 +167,7 @@ class Particle:
         # just evolve 1 generation to find the best child
     def evolve_particle(self):
         input_m = []
-
+        self.logger.debug("in evolve_particle, parent_net in particle:{}".self.parent_net.state_dict()['fc.2.bias'])
         gpu_number = torch.cuda.device_count()
         for u in range(self.population+1):
             if gpu_number == 0:
@@ -198,7 +201,7 @@ class Particle:
             self.l_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
-        self.logger.info("best score in paritcle:{}".format(result[0][1]))
+        self.logger.info("in evolve_particle, best score in paritcle:{}".format(result[0][1]))
         return self.l_best, self.l_best_value, all_frames
 
 
@@ -235,13 +238,17 @@ class ParticleSwarm:
         else:
             devices = "cpu"
         # create normal parents_net
-        loc = -5
+        loc = 0
+        loc_limit = (self.swarm_size-1)//2
         for u in range(self.swarm_size):
             # create normal parents_net
             particle_parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)  # .to(self.device)
             for p in particle_parent_net.parameters():
                 re_distribution = torch.tensor(np.random.normal(loc=loc, size=p.data.size()).astype(np.float32))#.to(device)
                 p.data += re_distribution
+            if loc == loc_limit:
+                loc = -loc_limit
+
             loc = loc + 1
 
             # self.parent_net = parent_net
@@ -263,9 +270,6 @@ class ParticleSwarm:
             p = Particle(logger=self.logger, velocity=velocity, devices=devices, l_best_value=l_best_value, l_best=l_best,
                          parent_net=particle_parent_net, population=self.population, game=self.game)
             self.p_input.append(p)
-
-        # for particle in self.p_input:
-        #     particle.update_g_best(self.best_net, self.best_score)
 
     def update_particle(self, particle):
         particle.update_parent_position(self.best_net)
