@@ -218,7 +218,7 @@ class Particle:
         pool.close()
         pool.join()
 
-        assert len(result) == (self.population+1)
+        assert len(result) == (self.population)
         result.sort(key=lambda p: p[1], reverse=True)
         all_frames = sum([pair[2] for pair in result])
         if self.l_best_value < result[0][1]:
