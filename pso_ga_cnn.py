@@ -112,7 +112,7 @@ def work_func(input_w):
     child_net = mutate_net(parent_net_w.to(device), seed_w, device, noise_step, copy_net=False)
     reward, frames = evaluate(child_net, device, env_w)
     result = (seed_w, reward, frames)
-    print("in work_func,reward:{}".format(reward))
+    # print("in work_func,reward:{}".format(reward))
     return result
 
 
