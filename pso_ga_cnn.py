@@ -78,9 +78,10 @@ def mutate_net(net, seed, device, copy_net=True):
     new_net = copy.deepcopy(net) if copy_net else net
     # np.random.seed(seed)
     # print("in mutate_net,Before, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
+    np.random.seed(seed)
     if seed:
         for p in new_net.parameters():
-            np.random.seed(seed)
+            # np.random.seed(seed)
             noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
             p.data += mutation_step * noise_t
 
@@ -105,7 +106,8 @@ def work_func(input_w):
     env_w = make_env(game)
     parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n)
     parent_net_w.load_state_dict(parent_net)
-    print("in work_func,parent_net:{}".format(parent_net_w.state_dict()['fc.2.bias']))
+    # print("in work_func,parent_net:{}".format(parent_net_w.state_dict()['fc.2.bias']))
+    print("in work_func,seed_w:{}".format(seed_w))
 
     child_net = mutate_net(parent_net_w.to(device), seed_w, device, copy_net=False)
     reward, frames = evaluate(child_net, device, env_w)
