@@ -167,7 +167,8 @@ class Particle:
         # just evolve 1 generation to find the best child
     def evolve_particle(self):
         input_m = []
-        self.logger.debug("in evolve_particle, parent_net in particle:{}".self.parent_net.state_dict()['fc.2.bias'])
+        self.logger.debug("in evolve_particle, parent_net in particle:{}".
+                          format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
         for u in range(self.population+1):
             if gpu_number == 0:
