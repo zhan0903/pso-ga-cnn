@@ -90,9 +90,9 @@ def mutate_net(net, seed, device, copy_net=True):
 
 def build_net(env, seeds, device):
     torch.manual_seed(seeds[0])
-    net = Net(env.observation_space.shape, env.action_space.shape)
+    net = Net(env.observation_space.shape, env.action_space.shape).to(device)
     for seed in seeds[1:]:
-        net = mutate_net(net, seed, device,copy_net=False)
+        net = mutate_net(net, seed, device, copy_net=False)
     return net
 
 
@@ -113,7 +113,7 @@ def work_func(input_w):
 
     env_w = make_env(game)
     parent_net_w = build_net(env_w, seed_w, device)
-    seed = np.random.randint(MAX_SEED)
+    # seed = np.random.randint(MAX_SEED)
 
     # torch.manual_seed(seed)
     # parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n).to(device)
