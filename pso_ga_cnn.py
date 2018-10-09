@@ -106,7 +106,7 @@ def work_func(input_w):
     env_w = make_env(game)
     seed = np.random.randint(MAX_SEED)
     torch.manual_seed(seed)
-    parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n)
+    parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n).to(device)
     # parent_net_w.load_state_dict(parent_net)
     # print("in work_func,parent_net:{}".format(parent_net_w.state_dict()['fc.2.bias']))
     # print("in work_func,seed_w:{}".format(seed_w))
