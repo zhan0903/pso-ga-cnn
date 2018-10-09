@@ -305,8 +305,8 @@ class ParticleSwarm:
 
             if self.results[0][1] > self.best_score:
                 # no need deep copy here
-                self.best_net = self.result[0][0]
-                self.best_score = self.result[0][1]
+                self.best_net = self.results[0][0]
+                self.best_score = self.results[0][1]
                 # if find a better one, then update particles
                 for particle in self.p_input:
                     particle.update_g_best(self.best_net)
