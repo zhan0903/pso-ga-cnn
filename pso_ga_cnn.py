@@ -212,6 +212,7 @@ class Particle:
         with open(r"my_trainer_objects.pkl", "wb") as output_file:
             pickle.dump(self.parent_net.state_dict(), output_file, True)
 
+        # max_process = max_cpu cores
         pool = mp.Pool(self.max_process)
         # (seed, reward, frames) map->map_aync
         result = pool.map(work_func, input_m)
