@@ -16,7 +16,7 @@ import pickle
 
 
 MAX_SEED = 2**32 - 1
-mutation_step = 0.005
+mutation_step = 0.05
 
 
 def make_env(game):
@@ -74,7 +74,7 @@ def evaluate(net, device, env_e):
     return reward, frames
 
 
-def mutate_net(net, seed, device, noise_step, copy_net=True):
+def mutate_net(net, seed, device, copy_net=True):
     new_net = copy.deepcopy(net) if copy_net else net
     # np.random.seed(seed)
     # print("in mutate_net,Before, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
@@ -83,7 +83,7 @@ def mutate_net(net, seed, device, noise_step, copy_net=True):
         for p in new_net.parameters():
             # np.random.seed(seed)
             noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
-            p.data += noise_step * noise_t
+            p.data += mutation_step * noise_t
 
     return new_net
 
@@ -93,7 +93,7 @@ def work_func(input_w):
     seed_w = input_w[0]
     game = input_w[1]
     device = input_w[2]
-    noise_step = input_w[3]
+    # noise_step = input_w[3]
     with open(r"my_trainer_objects.pkl", "rb") as input_file:
         parent_net = pickle.load(input_file)
 
@@ -109,7 +109,7 @@ def work_func(input_w):
     # print("in work_func,parent_net:{}".format(parent_net_w.state_dict()['fc.2.bias']))
     # print("in work_func,seed_w:{}".format(seed_w))
 
-    child_net = mutate_net(parent_net_w.to(device), seed_w, device, noise_step, copy_net=False)
+    child_net = mutate_net(parent_net_w.to(device), seed_w, device, copy_net=False)
     reward, frames = evaluate(child_net, device, env_w)
     result = (seed_w, reward, frames)
     # print("in work_func,reward:{}".format(reward))
@@ -172,8 +172,9 @@ class Particle:
         self.logger.debug("in evolve_particle, parent_net in particle:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
+        # noise_step = None
         for u in range(self.population+1):
-            noise_step = np.random.normal(scale=0.8)
+            # noise_step = np.random.normal(scale=0.8)
 
             if gpu_number == 0:
                 device = "cpu"
@@ -181,11 +182,11 @@ class Particle:
                 device_id = u % gpu_number
                 device = self.devices[device_id]
             if u == self.population:
-                input_m.append((None, self.game, device, noise_step))
+                input_m.append((None, self.game, device))
             else:
                 seed = np.random.randint(MAX_SEED)
                 # self.logger.debug("in evolve_paricle,device:{}".format(device))
-                input_m.append((seed, self.game, device, noise_step))
+                input_m.append((seed, self.game, device))
         # evaluate parent net
         # input_m.append((None, self.game, self.devices[0]))
         with open(r"my_trainer_objects.pkl", "wb") as output_file:
