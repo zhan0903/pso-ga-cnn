@@ -94,8 +94,8 @@ def work_func(input_w):
     game = input_w[1]
     device = input_w[2]
     # noise_step = input_w[3]
-    with open(r"my_trainer_objects.pkl", "rb") as input_file:
-        parent_net = pickle.load(input_file)
+    # with open(r"my_trainer_objects.pkl", "rb") as input_file:
+    #     parent_net = pickle.load(input_file)
 
     if device != "cpu":
         device_w_id = int(device[-1])
@@ -104,14 +104,18 @@ def work_func(input_w):
     # print("in work_func, device:{},id:{}".format(device, work_id))
 
     env_w = make_env(game)
+    seed = np.random.randint(MAX_SEED)
+    torch.manual_seed(seed)
     parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n)
-    parent_net_w.load_state_dict(parent_net)
+    # parent_net_w.load_state_dict(parent_net)
     # print("in work_func,parent_net:{}".format(parent_net_w.state_dict()['fc.2.bias']))
     # print("in work_func,seed_w:{}".format(seed_w))
 
-    child_net = mutate_net(parent_net_w.to(device), seed_w, device, copy_net=False)
-    reward, frames = evaluate(child_net, device, env_w)
-    result = (seed_w, reward, frames)
+    # child_net = mutate_net(parent_net_w.to(device), seed_w, device, copy_net=False)
+    # reward, frames = evaluate(child_net, device, env_w)
+    reward, frames = evaluate(parent_net_w, device, env_w)
+
+    result = (seed, reward, frames)
     # print("in work_func,reward:{}".format(reward))
     return result
 
