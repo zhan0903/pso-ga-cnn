@@ -88,6 +88,14 @@ def mutate_net(net, seed, device, copy_net=True):
     return new_net
 
 
+def build_net(env, seeds, device):
+    torch.manual_seed(seeds[0])
+    net = Net(env.observation_space.shape, env.action_space.shape)
+    for seed in seeds[1:]:
+        net = mutate_net(net, seed, device,copy_net=False)
+    return net
+
+
 def work_func(input_w):
     # work_id = mp.current_process()
     seed_w = input_w[0]
@@ -104,9 +112,11 @@ def work_func(input_w):
     # print("in work_func, device:{},id:{}".format(device, work_id))
 
     env_w = make_env(game)
+    parent_net_w = build_net(env_w, seed_w, device)
     seed = np.random.randint(MAX_SEED)
-    torch.manual_seed(seed)
-    parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n).to(device)
+
+    # torch.manual_seed(seed)
+    # parent_net_w = Net(env_w.observation_space.shape, env_w.action_space.n).to(device)
     # parent_net_w.load_state_dict(parent_net)
     # print("in work_func,parent_net:{}".format(parent_net_w.state_dict()['fc.2.bias']))
     # print("in work_func,seed_w:{}".format(seed_w))
@@ -125,6 +135,7 @@ class Particle:
                  population=10, devices='cpu', chi=0.72984, phi_p=2.05, phi_g=2.05, game="PongNoFrameskip-v4"):
         self.population = population
         self.chi = chi
+        self.seeds = []
         self.phi_p = phi_p
         self.phi_g = phi_g
         # self.mutation_step = 0.005
@@ -189,8 +200,12 @@ class Particle:
                 input_m.append((None, self.game, device))
             else:
                 seed = np.random.randint(MAX_SEED)
-                # self.logger.debug("in evolve_paricle,device:{}".format(device))
-                input_m.append((seed, self.game, device))
+                if not self.seeds:
+                    self.seeds.append([seed])
+                else:
+                    self.seeds[u].append(seed)
+                self.logger.debug("in evolve_paricle,self.seeds[u]:{}".format(self.seeds[u]))
+                input_m.append((self.seeds[u], self.game, device))
         # evaluate parent net
         # input_m.append((None, self.game, self.devices[0]))
         with open(r"my_trainer_objects.pkl", "wb") as output_file:
