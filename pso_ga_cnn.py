@@ -90,7 +90,7 @@ def mutate_net(net, seed, device, copy_net=True):
 
 def build_net(env, seeds, device):
     torch.manual_seed(seeds[0])
-    net = Net(env.observation_space.shape, env.action_space.shape).to(device)
+    net = Net(env.observation_space.shape, env.action_space.n).to(device)
     for seed in seeds[1:]:
         net = mutate_net(net, seed, device, copy_net=False)
     return net
@@ -101,6 +101,7 @@ def work_func(input_w):
     seed_w = input_w[0]
     game = input_w[1]
     device = input_w[2]
+    # print("device in work_func:{}".format(device))
     # noise_step = input_w[3]
     # with open(r"my_trainer_objects.pkl", "rb") as input_file:
     #     parent_net = pickle.load(input_file)
