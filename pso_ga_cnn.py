@@ -181,7 +181,7 @@ class Particle:
                 device_id = u % gpu_number
                 device = self.devices[device_id]
             if u == self.population:
-                input_m.append((None, self.game, device))
+                input_m.append((None, self.game, device, noise_step))
             else:
                 seed = np.random.randint(MAX_SEED)
                 # self.logger.debug("in evolve_paricle,device:{}".format(device))
