@@ -16,7 +16,7 @@ import pickle
 
 
 MAX_SEED = 2**32 - 1
-mutation_step = 0.05
+mutation_step = 0.01
 
 
 def make_env(game):
