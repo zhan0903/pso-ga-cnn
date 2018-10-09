@@ -125,7 +125,7 @@ def work_func(input_w):
     # reward, frames = evaluate(child_net, device, env_w)
     reward, frames = evaluate(parent_net_w, device, env_w)
 
-    result = (seed, reward, frames)
+    result = (seed_w, reward, frames)
     # print("in work_func,reward:{}".format(reward))
     return result
 
@@ -188,7 +188,7 @@ class Particle:
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
         # noise_step = None
-        for u in range(self.population+1):
+        for u in range(self.population):
             # noise_step = np.random.normal(scale=0.8)
 
             if gpu_number == 0:
@@ -196,16 +196,16 @@ class Particle:
             else:
                 device_id = u % gpu_number
                 device = self.devices[device_id]
-            if u == self.population:
-                input_m.append((None, self.game, device))
+            # if u == self.population:
+            #     input_m.append((None, self.game, device))
+            # else:
+            seed = np.random.randint(MAX_SEED)
+            if not self.seeds or len(self.seeds) < self.population:
+                self.seeds.append([seed])
             else:
-                seed = np.random.randint(MAX_SEED)
-                if not self.seeds:
-                    self.seeds.append([seed])
-                else:
-                    self.seeds[u].append(seed)
-                self.logger.debug("in evolve_paricle,self.seeds[u]:{}".format(self.seeds[u]))
-                input_m.append((self.seeds[u], self.game, device))
+                self.seeds[u].append(seed)
+            self.logger.debug("in evolve_paricle,self.seeds[u]:{}".format(self.seeds[u]))
+            input_m.append((self.seeds[u], self.game, device))
         # evaluate parent net
         # input_m.append((None, self.game, self.devices[0]))
         with open(r"my_trainer_objects.pkl", "wb") as output_file:
