@@ -188,7 +188,7 @@ class Particle:
             # parent = np.random.randint(0, self.population)
             # parent = 0
             # self.logger.debug("best_seed in clone:{}".format(self.l_best_seed))
-            self.seeds[i] = self.l_best_seed
+            self.seeds[i] = copy.copy(self.l_best_seed)
             self.logger.debug("self.seeds[parent] in clone:{}".format(self.seeds[i]))
         self.logger.debug("in clone,self.seeds len:{}".format(len(self.seeds)))
 
