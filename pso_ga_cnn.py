@@ -227,10 +227,10 @@ class Particle:
         result.sort(key=lambda p: p[1], reverse=True)
         all_frames = sum([pair[2] for pair in result])
         if self.l_best_value < result[0][1]:
-            # self.l_best_seed = result[0][0]
+             self.l_best_seed = result[0][0]
             self.l_best_value = result[0][1]
-            self.clone(self.l_best_value)
-            self.l_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
+            self.clone(self.l_best_seed)
+            #self.l_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
         self.logger.info("in evolve_particle, best score in paritcle:{0}, seed:{1}".format(result[0][1], result[0][0]))
