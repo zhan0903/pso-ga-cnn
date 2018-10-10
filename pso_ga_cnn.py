@@ -196,10 +196,10 @@ class Particle:
         self.logger.debug("in evolve_particle, parent_net in particle:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
+        self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
         # noise_step = None
         for u in range(self.population):
             # noise_step = np.random.normal(scale=0.8)
-
             if gpu_number == 0:
                 device = "cpu"
             else:
@@ -241,7 +241,7 @@ class Particle:
             self.l_best_seed = result[0][0]
             self.l_best_value = result[0][1]
             self.clone(self.l_best_seed)
-            self.logger.debug("self.seeds len:{0},self.seeds:{1}".format(len(self.seeds), self.seeds))
+            # self.logger.debug("self.seeds len:{0},self.seeds:{1}".format(len(self.seeds), self.seeds))
 
             # self.parents = []
             # for i in range(10):
@@ -347,13 +347,13 @@ class ParticleSwarm:
                 self.best_net = self.results[0][0]
                 self.best_score = self.results[0][1]
                 # if find a better one, then update particles
-                for particle in self.p_input:
-                    particle.update_g_best(self.best_net)
+                # for particle in self.p_input:
+                #     particle.update_g_best(self.best_net)
                     # particle.update_parent_position(self.best_net)
                     # self.update_particle(particle)
             # else:# random mutate particle parent
-            for particle in self.p_input:
-                particle.update_position()
+            # for particle in self.p_input:
+            #     particle.update_position()
 
             self.logger.info("best core:{}".format(self.best_score))
             self.logger.info("time cost:{}ms".format((time.time() - time_start)//60))
