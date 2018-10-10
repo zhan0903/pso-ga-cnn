@@ -181,6 +181,10 @@ class Particle:
         # # if reward > self.l_best_value:
         # #     self.l_best_value = reward
         # #     self.l_best = copy.deepcopy(self.parent_net)
+    def clone(self, best_seed):
+        for i in range(200):
+            parent = np.random.randint(0, self.population)
+            self.seeds[parent] = best_seed
 
         # just evolve 1 generation to find the best child
     def evolve_particle(self):
@@ -225,6 +229,7 @@ class Particle:
         if self.l_best_value < result[0][1]:
             # self.l_best_seed = result[0][0]
             self.l_best_value = result[0][1]
+            self.clone(self.l_best_value)
             self.l_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
