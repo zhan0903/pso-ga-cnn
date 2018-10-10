@@ -184,11 +184,12 @@ class Particle:
         # #     self.l_best = copy.deepcopy(self.parent_net)
     def clone(self):
         self.logger.debug("best_seed in clone:{}".format(self.l_best_seed))
-        for i in range(200):
-            parent = np.random.randint(0, self.population)
+        for i in range(10):
+            # parent = np.random.randint(0, self.population)
+            # parent = 0
             # self.logger.debug("best_seed in clone:{}".format(self.l_best_seed))
-            self.seeds[parent] = self.l_best_seed
-            self.logger.debug("self.seeds[parent] in clone:{}".format(self.seeds[parent]))
+            self.seeds[i] = self.l_best_seed
+            self.logger.debug("self.seeds[parent] in clone:{}".format(self.seeds[i]))
         self.logger.debug("in clone,self.seeds len:{}".format(len(self.seeds)))
 
         # just evolve 1 generation to find the best child
@@ -203,6 +204,7 @@ class Particle:
         time_start = time.time()
         while True:
             input_m = []
+            self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
             for u in range(self.population):
                 # noise_step = np.random.normal(scale=0.8)
                 if gpu_number == 0:
