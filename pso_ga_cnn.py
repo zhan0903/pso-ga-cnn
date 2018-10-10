@@ -248,9 +248,8 @@ class Particle:
             all_frames = sum([pair[2] for pair in result])
             self.logger.debug("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
             self.logger.debug("time cost:{}".format((time.time()-time_start)//60))
-            if self.l_best_value < result[0][1]:
+            if self.l_best_value <= result[0][1]:
                 self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
-
                 self.l_best_seed = result[0][0]
                 self.l_best_value = result[0][1]
                 self.clone()
