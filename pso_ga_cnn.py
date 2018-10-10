@@ -150,6 +150,7 @@ class Particle:
         self.parent_net = copy.deepcopy(parent_net)
         self.env = make_env(self.game)
         self.logger = logger
+        self.parents = []
         self.velocity = copy.deepcopy(velocity)
         self.max_process = mp.cpu_count()  # mp.cpu_count()
         # self.init_uniform_parent()
@@ -184,11 +185,14 @@ class Particle:
     def clone(self, best_seed):
         for i in range(200):
             parent = np.random.randint(0, self.population)
+            self.logger.debug("best_seed in clone:{}".format(best_seed))
             self.seeds[parent] = best_seed
+            self.logger.debug("self.seeds[parent] in clone:{}".format(self.seeds[parent]))
 
         # just evolve 1 generation to find the best child
     def evolve_particle(self):
         input_m = []
+        # input_seed = None
         self.logger.debug("in evolve_particle, parent_net in particle:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
@@ -209,12 +213,18 @@ class Particle:
                 self.seeds.append([seed])
             else:
                 self.seeds[u].append(seed)
+            parent = np.random.randint(0, 10)
+            if self.parents:
+                input_seed = self.parents[parent]
+            else:
+                input_seed = self.seeds[u]
+
             self.logger.debug("in evolve_paricle,self.seeds[u]:{}".format(self.seeds[u]))
-            input_m.append((self.seeds[u], self.game, device))
+            input_m.append((input_seed, self.game, device))
         # evaluate parent net
         # input_m.append((None, self.game, self.devices[0]))
-        with open(r"my_trainer_objects.pkl", "wb") as output_file:
-            pickle.dump(self.parent_net.state_dict(), output_file, True)
+        # with open(r"my_trainer_objects.pkl", "wb") as output_file:
+        #     pickle.dump(self.parent_net.state_dict(), output_file, True)
 
         # max_process = max_cpu cores
         pool = mp.Pool(self.max_process)
@@ -230,6 +240,10 @@ class Particle:
             self.l_best_seed = result[0][0]
             self.l_best_value = result[0][1]
             self.clone(self.l_best_seed)
+
+            # self.parents = []
+            # for i in range(10):
+            #     self.parents.append(result[i][0])
             #self.l_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
