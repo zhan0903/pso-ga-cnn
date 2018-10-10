@@ -200,6 +200,7 @@ class Particle:
         gpu_number = torch.cuda.device_count()
         self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
         # noise_step = None
+        time_start = time.time()
         while True:
             input_m = []
             for u in range(self.population):
@@ -231,7 +232,7 @@ class Particle:
             #     pickle.dump(self.parent_net.state_dict(), output_file, True)
 
             # max_process = max_cpu cores
-            pool = mp.Pool(self.max_process)
+            pool = mp.Pool(20)
             # (seed, reward, frames) map->map_aync
             result = pool.map(work_func, input_m)
             pool.close()
@@ -241,6 +242,7 @@ class Particle:
             result.sort(key=lambda p: p[1], reverse=True)
             all_frames = sum([pair[2] for pair in result])
             self.logger.debug("best score:{}".format(result[0][1]))
+            self.logger.debug("time cost:{}".format((time.time()-time_start)//60))
             if self.l_best_value < result[0][1]:
                 self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
 
