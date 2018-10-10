@@ -183,11 +183,13 @@ class Particle:
         # #     self.l_best_value = reward
         # #     self.l_best = copy.deepcopy(self.parent_net)
     def clone(self):
+        self.logger.debug("best_seed in clone:{}".format(self.l_best_seed))
         for i in range(200):
             parent = np.random.randint(0, self.population)
-            self.logger.debug("best_seed in clone:{}".format(self.l_best_seed))
+            # self.logger.debug("best_seed in clone:{}".format(self.l_best_seed))
             self.seeds[parent] = self.l_best_seed
-            self.logger.debug("self.seeds[parent] in clone:{}".format(self.seeds[parent]))
+            # self.logger.debug("self.seeds[parent] in clone:{}".format(self.seeds[parent]))
+        self.logger.debug("in clone,self.seeds:{}".format(self.seeds))
 
         # just evolve 1 generation to find the best child
     def evolve_particle(self):
@@ -238,8 +240,10 @@ class Particle:
             assert len(result) == self.population
             result.sort(key=lambda p: p[1], reverse=True)
             all_frames = sum([pair[2] for pair in result])
+            self.logger.debug("best score:{}".format(result[0][1]))
             if self.l_best_value < result[0][1]:
                 self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
+
                 self.l_best_seed = result[0][0]
                 self.l_best_value = result[0][1]
                 self.clone()
