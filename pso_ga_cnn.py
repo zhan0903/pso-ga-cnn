@@ -205,6 +205,8 @@ class Particle:
         while True:
             input_m = []
             self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
+            self.logger.debug("in evolve_particle, len of self.seeds:{}".format(len(self.seeds)))
+
             for u in range(self.population):
                 # noise_step = np.random.normal(scale=0.8)
                 if gpu_number == 0:
@@ -219,6 +221,7 @@ class Particle:
                 if not self.seeds or len(self.seeds) < self.population:
                     self.seeds.append([seed])
                 else:
+                    self.logger.debug("in evolve_particle:{0},self.seeds[u]".format(seed, self.seeds[u]))
                     self.seeds[u].append(seed)
                 parent = np.random.randint(0, 10)
                 if self.parents:
