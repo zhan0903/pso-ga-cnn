@@ -182,66 +182,68 @@ class Particle:
         # # if reward > self.l_best_value:
         # #     self.l_best_value = reward
         # #     self.l_best = copy.deepcopy(self.parent_net)
-    def clone(self, best_seed):
+    def clone(self):
         for i in range(200):
             parent = np.random.randint(0, self.population)
-            self.logger.debug("best_seed in clone:{}".format(best_seed))
-            self.seeds[parent] = best_seed
+            self.logger.debug("best_seed in clone:{}".format(self.l_best_seed))
+            self.seeds[parent] = self.l_best_seed
             self.logger.debug("self.seeds[parent] in clone:{}".format(self.seeds[parent]))
 
         # just evolve 1 generation to find the best child
     def evolve_particle(self):
-        input_m = []
+        # input_m = []
         # input_seed = None
         self.logger.debug("in evolve_particle, parent_net in particle:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
         self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
         # noise_step = None
-        for u in range(self.population):
-            # noise_step = np.random.normal(scale=0.8)
-            if gpu_number == 0:
-                device = "cpu"
-            else:
-                device_id = u % gpu_number
-                device = self.devices[device_id]
-            # if u == self.population:
-            #     input_m.append((None, self.game, device))
-            # else:
-            seed = np.random.randint(MAX_SEED)
-            if not self.seeds or len(self.seeds) < self.population:
-                self.seeds.append([seed])
-            else:
-                self.seeds[u].append(seed)
-            parent = np.random.randint(0, 10)
-            if self.parents:
-                input_seed = self.parents[parent]
-            else:
-                input_seed = self.seeds[u]
+        while True:
+            input_m = []
+            for u in range(self.population):
+                # noise_step = np.random.normal(scale=0.8)
+                if gpu_number == 0:
+                    device = "cpu"
+                else:
+                    device_id = u % gpu_number
+                    device = self.devices[device_id]
+                # if u == self.population:
+                #     input_m.append((None, self.game, device))
+                # else:
+                seed = np.random.randint(MAX_SEED)
+                if not self.seeds or len(self.seeds) < self.population:
+                    self.seeds.append([seed])
+                else:
+                    self.seeds[u].append(seed)
+                parent = np.random.randint(0, 10)
+                if self.parents:
+                    input_seed = self.parents[parent]
+                else:
+                    input_seed = self.seeds[u]
 
-            # self.logger.debug("in evolve_paricle,u:{0},self.seeds[u]:{1}".format(u, self.seeds[u]))
-            input_m.append((input_seed, self.game, device))
-        # evaluate parent net
-        # input_m.append((None, self.game, self.devices[0]))
-        # with open(r"my_trainer_objects.pkl", "wb") as output_file:
-        #     pickle.dump(self.parent_net.state_dict(), output_file, True)
+                # self.logger.debug("in evolve_paricle,u:{0},self.seeds[u]:{1}".format(u, self.seeds[u]))
+                input_m.append((input_seed, self.game, device))
+            # evaluate parent net
+            # input_m.append((None, self.game, self.devices[0]))
+            # with open(r"my_trainer_objects.pkl", "wb") as output_file:
+            #     pickle.dump(self.parent_net.state_dict(), output_file, True)
 
-        # max_process = max_cpu cores
-        pool = mp.Pool(self.max_process)
-        # (seed, reward, frames) map->map_aync
-        result = pool.map(work_func, input_m)
-        pool.close()
-        pool.join()
+            # max_process = max_cpu cores
+            pool = mp.Pool(self.max_process)
+            # (seed, reward, frames) map->map_aync
+            result = pool.map(work_func, input_m)
+            pool.close()
+            pool.join()
 
-        assert len(result) == self.population
-        result.sort(key=lambda p: p[1], reverse=True)
-        all_frames = sum([pair[2] for pair in result])
-        if self.l_best_value < result[0][1]:
-            self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
-            self.l_best_seed = result[0][0]
-            self.l_best_value = result[0][1]
-            self.clone(self.l_best_seed)
-            # self.logger.debug("self.seeds len:{0},self.seeds:{1}".format(len(self.seeds), self.seeds))
+            assert len(result) == self.population
+            result.sort(key=lambda p: p[1], reverse=True)
+            all_frames = sum([pair[2] for pair in result])
+            if self.l_best_value < result[0][1]:
+                self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
+                self.l_best_seed = result[0][0]
+                self.l_best_value = result[0][1]
+                self.clone()
+                # self.logger.debug("self.seeds len:{0},self.seeds:{1}".format(len(self.seeds), self.seeds))
 
             # self.parents = []
             # for i in range(10):
@@ -249,7 +251,7 @@ class Particle:
             #self.l_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
-        self.logger.info("in evolve_particle, best score in paritcle:{0}, seed:{1}".format(result[0][1], result[0][0]))
+        # self.logger.info("in evolve_particle, best score in paritcle:{0}, seed:{1}".format(result[0][1], result[0][0]))
         return self.l_best, self.l_best_value, all_frames
 
 
