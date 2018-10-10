@@ -219,7 +219,7 @@ class Particle:
             else:
                 input_seed = self.seeds[u]
 
-            self.logger.debug("in evolve_paricle,u:{0},self.seeds[u]:{1}".format(u, self.seeds[u]))
+            # self.logger.debug("in evolve_paricle,u:{0},self.seeds[u]:{1}".format(u, self.seeds[u]))
             input_m.append((input_seed, self.game, device))
         # evaluate parent net
         # input_m.append((None, self.game, self.devices[0]))
@@ -313,6 +313,7 @@ class ParticleSwarm:
             l_best_value = reward
             l_best = particle_parent_net
             velocity = Net(self.env.observation_space.shape, self.env.action_space.n)
+            self.logger.debug("in init_swarm,l_best_value:{}".format(l_best_value))
 
             p = Particle(logger=self.logger, velocity=velocity, devices=devices, l_best_value=l_best_value, l_best=l_best,
                          parent_net=particle_parent_net, population=self.population, game=self.game)
