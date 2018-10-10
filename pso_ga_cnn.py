@@ -144,7 +144,7 @@ class Particle:
         self.devices = devices
         self.g_best = g_best
         # self.g_best_value = g_best_value
-        # self.l_best_seed = None
+        self.l_best_seed = None
         self.l_best = copy.deepcopy(l_best)
         self.l_best_value = l_best_value
         self.parent_net = copy.deepcopy(parent_net)
@@ -227,7 +227,7 @@ class Particle:
         result.sort(key=lambda p: p[1], reverse=True)
         all_frames = sum([pair[2] for pair in result])
         if self.l_best_value < result[0][1]:
-             self.l_best_seed = result[0][0]
+            self.l_best_seed = result[0][0]
             self.l_best_value = result[0][1]
             self.clone(self.l_best_seed)
             #self.l_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
