@@ -4,5 +4,5 @@
     "population_per_worker": 800,
     "frames_limit": "500M",
     "debug": 0,
-    "comments": "10/6 version pso+ga+cnn,standard normal,loc=[-5,-4,-3,-2,-1,0,1,2,3,4,5]"
+    "comments": "10/6 version pso+ga+cnn,standard normal,loc=[0]"
 }

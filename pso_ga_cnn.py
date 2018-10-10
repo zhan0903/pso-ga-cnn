@@ -246,8 +246,8 @@ class Particle:
             assert len(result) == self.population
             result.sort(key=lambda p: p[1], reverse=True)
             all_frames = sum([pair[2] for pair in result])
-            self.logger.debug("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
-            self.logger.debug("time cost:{}".format((time.time()-time_start)//60))
+            self.logger.info("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
+            self.logger.info("time cost:{}".format((time.time()-time_start)//60))
             if self.l_best_value < result[0][1]:
                 self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
                 self.l_best_seed = result[0][0]
