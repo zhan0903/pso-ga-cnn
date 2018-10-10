@@ -237,6 +237,7 @@ class Particle:
         result.sort(key=lambda p: p[1], reverse=True)
         all_frames = sum([pair[2] for pair in result])
         if self.l_best_value < result[0][1]:
+            self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
             self.l_best_seed = result[0][0]
             self.l_best_value = result[0][1]
             self.clone(self.l_best_seed)
