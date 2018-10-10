@@ -188,17 +188,17 @@ class Particle:
             parent = np.random.randint(0, self.population)
             # self.logger.debug("best_seed in clone:{}".format(self.l_best_seed))
             self.seeds[parent] = self.l_best_seed
-            # self.logger.debug("self.seeds[parent] in clone:{}".format(self.seeds[parent]))
-        self.logger.debug("in clone,self.seeds:{}".format(self.seeds))
+            self.logger.debug("self.seeds[parent] in clone:{}".format(self.seeds[parent]))
+        self.logger.debug("in clone,self.seeds len:{}".format(len(self.seeds)))
 
         # just evolve 1 generation to find the best child
     def evolve_particle(self):
         # input_m = []
         # input_seed = None
-        self.logger.debug("in evolve_particle, parent_net in particle:{}".
-                          format(self.parent_net.state_dict()['fc.2.bias']))
+        # self.logger.debug("in evolve_particle, parent_net in particle:{}".
+        #                   format(self.parent_net.state_dict()['fc.2.bias']))
         gpu_number = torch.cuda.device_count()
-        self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
+        # self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
         # noise_step = None
         time_start = time.time()
         while True:
@@ -241,7 +241,7 @@ class Particle:
             assert len(result) == self.population
             result.sort(key=lambda p: p[1], reverse=True)
             all_frames = sum([pair[2] for pair in result])
-            self.logger.debug("best score:{}".format(result[0][1]))
+            self.logger.debug("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
             self.logger.debug("time cost:{}".format((time.time()-time_start)//60))
             if self.l_best_value < result[0][1]:
                 self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
