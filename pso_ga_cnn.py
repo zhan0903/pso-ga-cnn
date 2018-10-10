@@ -219,7 +219,7 @@ class Particle:
             else:
                 input_seed = self.seeds[u]
 
-            self.logger.debug("in evolve_paricle,self.seeds[u]:{}".format(self.seeds[u]))
+            self.logger.debug("in evolve_paricle,u:{0},self.seeds[u]:{1}".format(u, self.seeds[u]))
             input_m.append((input_seed, self.game, device))
         # evaluate parent net
         # input_m.append((None, self.game, self.devices[0]))
@@ -240,6 +240,7 @@ class Particle:
             self.l_best_seed = result[0][0]
             self.l_best_value = result[0][1]
             self.clone(self.l_best_seed)
+            self.logger.debug("self.seeds len:{0},self.seeds:{1}".format(len(self.seeds), self.seeds))
 
             # self.parents = []
             # for i in range(10):
