@@ -17,6 +17,9 @@ import pickle
 
 MAX_SEED = 2**32 - 1
 mutation_step = 0.01
+# chi = 0.72984
+phi_p = 0.4
+phi_g = 0.8
 
 
 def make_env(game):
@@ -95,12 +98,37 @@ def build_net(env, seeds, device):
         net = mutate_net(net, seed, device, copy_net=False)
     return net
 
+# key al
+def update_position(current_pos, local_best, global_best):
+    # if self.g_best is None:
+    #     self.g_best = self.parent_net
+    #
+    for c, l, g in zip(current_pos.parameters(), local_best.parameters(), global_best.parameters()):
+        # self.logger.debug("update_parent_position,p:{0},l:{1},g:{2},v:{3}".format(p.data, l.data, g.data, v.data))
+        r_g = np.random.uniform(low=0, high=1, size=c.data.size()).astype(np.float32)
+        r_p = np.random.uniform(low=0, high=1, size=c.data.size()).astype(np.float32)
+        v = phi_p * r_p * (l.data - c.data) + phi_g * r_g * (g.data - c.data)
+        c.data += v
 
+    #
+    # for p, l, g, v in zip(self.parent_net.parameters(), self.l_best.parameters(),
+    #                       self.g_best.parameters(), self.velocity.parameters()):
+    #     # self.logger.debug("update_parent_position,p:{0},l:{1},g:{2},v:{3}".format(p.data, l.data, g.data, v.data))
+    #     r_g = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
+    #     r_p = np.random.uniform(low=0, high=1, size=p.data.size()).astype(np.float32)
+    #     v = v * 1 + self.chi * (self.phi_p * r_p * (l.data - p.data) + self.phi_g * r_g * (g.data - p.data))
+    #     p.data += v
+
+
+# input: search particle head, local best location, global best location
 def work_func(input_w):
     # work_id = mp.current_process()
-    seed_w = input_w[0]
-    game = input_w[1]
-    device = input_w[2]
+    search_particle = input_w[0]
+    local_best_particle = input_w[1]
+    global_best_particle = input_w[2]
+
+    game = input_w[3]
+    device = input_w[4]
     # print("device in work_func:{}".format(device))
     # noise_step = input_w[3]
     # with open(r"my_trainer_objects.pkl", "rb") as input_file:
@@ -113,7 +141,13 @@ def work_func(input_w):
     # print("in work_func, device:{},id:{}".format(device, work_id))
 
     env_w = make_env(game)
-    parent_net_w = build_net(env_w, seed_w, device)
+
+    search_particle = build_net(env_w, search_particle, device)
+    local_best_particle = build_net(env_w, local_best_particle, device)
+    global_best_particle = build_net(env_w, global_best_particle, device)
+
+    update_position(search_particle, local_best_particle, global_best_particle).to(device)
+
     # seed = np.random.randint(MAX_SEED)
 
     # torch.manual_seed(seed)
@@ -124,15 +158,22 @@ def work_func(input_w):
 
     # child_net = mutate_net(parent_net_w.to(device), seed_w, device, copy_net=False)
     # reward, frames = evaluate(child_net, device, env_w)
-    reward, frames = evaluate(parent_net_w, device, env_w)
+    reward, frames = evaluate(search_particle, device, env_w)
 
-    result = (seed_w, reward, frames)
+    result = (search_particle.state_dict(), reward, frames)
     # print("in work_func,reward:{}".format(reward))
     return result
 
 
+class Individual:
+    def __init__(self, env, local_best=None, global_best=None):
+        self.local_best = local_best
+        self.global_best = global_best
+        self.current_pos = Net(env.observation_space.shape, env.action_space.n)
+
+
 class Particle:
-    def __init__(self, logger, g_best=None, l_best_value=None, l_best=None, parent_net=None, velocity=None,
+    def __init__(self, logger, g_best=None, g_best_value=None, l_best_value=None, l_best=None, parent_net=None, velocity=None,
                  population=10, devices='cpu', chi=0.72984, phi_p=2.05, phi_g=2.05, game="PongNoFrameskip-v4"):
         self.population = population
         self.chi = chi
@@ -143,7 +184,7 @@ class Particle:
         self.game = game
         self.devices = devices
         self.g_best = g_best
-        # self.g_best_value = g_best_value
+        self.g_best_value = g_best_value
         # self.l_best_seed = None
         self.l_best = copy.deepcopy(l_best)
         self.l_best_value = l_best_value
@@ -152,7 +193,14 @@ class Particle:
         self.logger = logger
         self.velocity = copy.deepcopy(velocity)
         self.max_process = mp.cpu_count()  # mp.cpu_count()
+        self.individuals = self.init_individuals()
         # self.init_uniform_parent()
+
+    def init_individuals(self):
+        individuals = []
+        for i in range(self.population):
+            individuals.append(Individual(env=self.env))
+        return individuals
 
     def update_g_best(self, g_best_net):
         self.g_best = copy.deepcopy(g_best_net)
@@ -183,7 +231,7 @@ class Particle:
         # #     self.l_best = copy.deepcopy(self.parent_net)
 
         # just evolve 1 generation to find the best child
-    def evolve_particle(self):
+    def evolve_particle_one_generation(self):
         input_m = []
         self.logger.debug("in evolve_particle, parent_net in particle:{}".
                           format(self.parent_net.state_dict()['fc.2.bias']))
@@ -201,12 +249,16 @@ class Particle:
             #     input_m.append((None, self.game, device))
             # else:
             seed = np.random.randint(MAX_SEED)
+            # self.indivduals.append(Individual(env=self.env))
             if not self.seeds or len(self.seeds) < self.population:
                 self.seeds.append([seed])
             else:
                 self.seeds[u].append(seed)
             self.logger.debug("in evolve_paricle,self.seeds[u]:{}".format(self.seeds[u]))
-            input_m.append((self.seeds[u], self.game, device))
+            # input_m.append((self.seeds[u], self.game, device))
+            input_m.append((self.individuals[u].current_pos.state_dict(),self.individuals[u].local_best,
+                            self.individuals[u].global_best,self.game, device))
+
         # evaluate parent net
         # input_m.append((None, self.game, self.devices[0]))
         with open(r"my_trainer_objects.pkl", "wb") as output_file:
@@ -214,18 +266,32 @@ class Particle:
 
         # max_process = max_cpu cores
         pool = mp.Pool(self.max_process)
-        # (seed, reward, frames) map->map_aync
+        # (individual.current_pos.state_dict(), reward, frames) map->map_aync
         result = pool.map(work_func, input_m)
         pool.close()
         pool.join()
 
         assert len(result) == self.population
         result.sort(key=lambda p: p[1], reverse=True)
+        result.max()
         all_frames = sum([pair[2] for pair in result])
-        if self.l_best_value < result[0][1]:
+        if self.g_best_value < result[0][1]:
             # self.l_best_seed = result[0][0]
-            self.l_best_value = result[0][1]
-            self.l_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
+            self.g_best_value = result[0][1]
+            self.g_best = Net(self.env.observation_space.shape, self.env.action_space.n)
+            self.g_best.load_state_dict(result[0][0])
+            # self.g_best = copy.deepcopy(result[0][1].current_pos)
+            # self.g_best = mutate_net(net=self.parent_net, device="cpu", seed=result[0][0])
+
+        for idx,value in enumerate(result):
+            if value[1] > self.individuals[idx].local_best_value:
+                self.individuals[idx].local_best = Net(self.env.observation_space.shape, self.env.action_space.n)
+                self.individuals[idx].local_best.load_state_dict(value[0])
+            if self.g_best_value > self.individuals[idx].global_best_value:
+                self.individuals[idx].global_best = copy.deepcopy(self.g_best)
+
+
+
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
         self.logger.info("in evolve_particle, best score in paritcle:{0}, seed:{1}".format(result[0][1], result[0][0]))
@@ -313,7 +379,7 @@ class ParticleSwarm:
                 self.logger.debug("in evolve_swarm, particle idx:{0},particle parent net:{1}".
                                   format(idx, particle.parent_net.state_dict()['fc.2.bias']))
                 # self.l_best, self.l_best_value, all_frames
-                result = particle.evolve_particle()
+                result = particle.evolve_particle_one_generation()
                 self.results.append(result)
 
             self.results.sort(key=lambda p: p[1], reverse=True)
