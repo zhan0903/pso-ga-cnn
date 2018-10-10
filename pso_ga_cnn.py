@@ -221,7 +221,7 @@ class Particle:
                 if not self.seeds or len(self.seeds) < self.population:
                     self.seeds.append([seed])
                 else:
-                    self.logger.debug("in evolve_particle:{0},self.seeds[u]".format(seed, self.seeds[u]))
+                    self.logger.debug("in evolve_particle, seed:{0},self.seeds[u]:{1}".format(seed, self.seeds[u]))
                     self.seeds[u].append(seed)
                 parent = np.random.randint(0, 10)
                 if self.parents:
