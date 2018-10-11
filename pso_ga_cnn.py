@@ -151,6 +151,7 @@ class Particle:
         self.env = make_env(self.game)
         self.logger = logger
         self.parents = []
+        self.elite = None
         self.velocity = copy.deepcopy(velocity)
         self.max_process = mp.cpu_count()  # mp.cpu_count()
         # self.init_uniform_parent()
@@ -226,6 +227,8 @@ class Particle:
                 parent = np.random.randint(0, 20)
                 if self.parents:
                     input_seed = self.parents[parent][0]
+                    seed = np.random.randint(MAX_SEED)
+                    input_seed.append(seed)
                 else:
                     input_seed = self.seeds[u]
 
@@ -244,19 +247,22 @@ class Particle:
             pool.join()
 
             assert len(result) == self.population
+            if self.elite is not None:
+                result.append(self.elite)
             result.sort(key=lambda p: p[1], reverse=True)
 
-            # self.parents = copy.copy([(item[0], item[1]) for item in result[:20]])
-            # self.logger.debug("self.parents:{}".format(self.parents))
+            self.parents = copy.copy([(item[0], item[1]) for item in result[:20]])
+            self.logger.debug("self.parents:{}".format(self.parents))
 
             all_frames = sum([pair[2] for pair in result])
             self.logger.info("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
             self.logger.info("time cost:{}".format((time.time()-time_start)//60))
-            if self.l_best_value <= result[0][1]:
-                self.parents = copy.copy([(item[0], item[1]) for item in result[:20]])
-                self.logger.debug("self.parents:{}".format(self.parents))
+            if self.l_best_value < result[0][1]:
+                # self.parents = copy.copy([(item[0], item[1]) for item in result[:20]])
+                # self.logger.debug("self.parents:{}".format(self.parents))
                 self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
-                self.l_best_seed = result[0][0]
+                self.elite = (result[0][0], result[0][1], 0)
+                # self.l_best_seed = result[0][0]
                 self.l_best_value = result[0][1]
                 # self.clone()
                 # self.logger.debug("self.seeds len:{0},self.seeds:{1}".format(len(self.seeds), self.seeds))
