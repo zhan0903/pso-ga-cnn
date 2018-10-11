@@ -203,6 +203,7 @@ class Particle:
         # self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
         # noise_step = None
         time_start = time.time()
+        init = False
         while True:
             input_m = []
             self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
@@ -251,13 +252,14 @@ class Particle:
                 result.append(self.elite)
             result.sort(key=lambda p: p[1], reverse=True)
 
-            self.parents = [(item[0], item[1]) for item in result[:20]]
-            self.logger.debug("self.parents:{}".format(self.parents))
+            # self.parents = [(item[0], item[1]) for item in result[:20]]
+            # self.logger.debug("self.parents:{}".format(self.parents))
 
             all_frames = sum([pair[2] for pair in result])
             self.logger.info("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
             self.logger.info("time cost:{}".format((time.time()-time_start)//60))
             if self.l_best_value < result[0][1]:
+                init = True
                 # self.parents = copy.copy([(item[0], item[1]) for item in result[:20]])
                 # self.logger.debug("self.parents:{}".format(self.parents))
                 self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
@@ -266,6 +268,10 @@ class Particle:
                 self.l_best_value = result[0][1]
                 # self.clone()
                 # self.logger.debug("self.seeds len:{0},self.seeds:{1}".format(len(self.seeds), self.seeds))
+
+            if init:
+                self.parents = [(item[0], item[1]) for item in result[:20]]
+                self.logger.debug("self.parents:{}".format(self.parents))
 
             # self.parents = []
             # for i in range(10):
