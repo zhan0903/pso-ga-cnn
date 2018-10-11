@@ -223,7 +223,7 @@ class Particle:
                 else:
                     self.logger.debug("in evolve_particle, seed:{0},self.seeds[u]:{1}".format(seed, self.seeds[u]))
                     self.seeds[u].append(seed)
-                parent = np.random.randint(0, 10)
+                parent = np.random.randint(0, 20)
                 if self.parents:
                     input_seed = self.parents[parent]
                 else:
@@ -246,16 +246,19 @@ class Particle:
             assert len(result) == self.population
             result.sort(key=lambda p: p[1], reverse=True)
 
-            # self.parents = copy.copy([(item[0], item[1]) for item in result])
+            self.parents = copy.copy([(item[0], item[1]) for item in result[:20]])
+            self.logger.debug("self.parents:{}".format(self.parents))
 
             all_frames = sum([pair[2] for pair in result])
             self.logger.info("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
             self.logger.info("time cost:{}".format((time.time()-time_start)//60))
             if self.l_best_value < result[0][1]:
+                self.parents = copy.copy([(item[0], item[1]) for item in result[:20]])
+                self.logger.debug("self.parents:{}".format(self.parents))
                 self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
                 self.l_best_seed = result[0][0]
                 self.l_best_value = result[0][1]
-                self.clone()
+                # self.clone()
                 # self.logger.debug("self.seeds len:{0},self.seeds:{1}".format(len(self.seeds), self.seeds))
 
             # self.parents = []
