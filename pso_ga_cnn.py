@@ -226,7 +226,7 @@ class Particle:
                     self.seeds[u].append(seed)
                 parent = np.random.randint(0, 20)
                 if self.parents:
-                    input_seed = self.parents[parent][0]
+                    input_seed = copy.copy(self.parents[parent][0])
                     seed = np.random.randint(MAX_SEED)
                     input_seed.append(seed)
                 else:
@@ -251,7 +251,7 @@ class Particle:
                 result.append(self.elite)
             result.sort(key=lambda p: p[1], reverse=True)
 
-            self.parents = copy.copy([(item[0], item[1]) for item in result[:20]])
+            self.parents = [(item[0], item[1]) for item in result[:20]]
             self.logger.debug("self.parents:{}".format(self.parents))
 
             all_frames = sum([pair[2] for pair in result])
