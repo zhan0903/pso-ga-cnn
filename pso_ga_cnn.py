@@ -225,7 +225,7 @@ class Particle:
                     self.seeds[u].append(seed)
                 parent = np.random.randint(0, 20)
                 if self.parents:
-                    input_seed = self.parents[parent]
+                    input_seed = self.parents[parent][0]
                 else:
                     input_seed = self.seeds[u]
 
