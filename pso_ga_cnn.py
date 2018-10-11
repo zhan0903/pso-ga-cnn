@@ -184,7 +184,7 @@ class Particle:
         # #     self.l_best = copy.deepcopy(self.parent_net)
     def clone(self):
         self.logger.debug("best_seed in clone:{}".format(self.l_best_seed))
-        for i in range(100):
+        for i in range(200):
             parent = np.random.randint(0, self.population)
             # parent = 0
             # self.logger.debug("best_seed in clone:{}".format(self.l_best_seed))
@@ -237,7 +237,7 @@ class Particle:
             #     pickle.dump(self.parent_net.state_dict(), output_file, True)
 
             # max_process = max_cpu cores
-            pool = mp.Pool(20)
+            pool = mp.Pool(self.max_process)
             # (seed, reward, frames) map->map_aync
             result = pool.map(work_func, input_m)
             pool.close()
@@ -245,6 +245,9 @@ class Particle:
 
             assert len(result) == self.population
             result.sort(key=lambda p: p[1], reverse=True)
+
+            # self.parents = copy.copy([(item[0], item[1]) for item in result])
+
             all_frames = sum([pair[2] for pair in result])
             self.logger.info("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
             self.logger.info("time cost:{}".format((time.time()-time_start)//60))
