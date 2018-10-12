@@ -279,8 +279,8 @@ class Particle:
         #     init = True
 
         # all_frames = sum([pair[2] for pair in result])
-        self.logger.info("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
-        self.logger.info("time cost:{}".format((time.time()-time_start)//60))
+        # self.logger.info("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
+        # self.logger.info("time cost:{}".format((time.time()-time_start)//60))
         # if self.l_best_value < result[0][1]:
             #     # init = True
             #
