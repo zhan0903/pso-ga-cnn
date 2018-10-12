@@ -94,13 +94,13 @@ def build_net(env, seeds, device):
     net = Net(env.observation_space.shape, env.action_space.n).to(device)
     for idx, item in enumerate(seeds[1:]):
         if idx == 0:
-            print("item in build_net:{}".format(item))
+            # print("item in build_net:{}".format(item))
             loc = item[0]
             seed = item[1]
         else:
             seed = item
             loc = 0
-        print("seed in build net:{}".format(seed))
+        # print("seed in build net:{}".format(seed))
         net = mutate_net(net, seed, device, loc=loc, copy_net=False)
     return net
 
