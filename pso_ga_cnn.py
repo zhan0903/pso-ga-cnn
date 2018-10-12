@@ -221,7 +221,7 @@ class Particle:
         # init = False
         # while True:
         input_m = []
-        self.logger.debug("in evolve_particle, self.seeds[:10]:{}".format(self.seeds[:10]))
+        # self.logger.debug("in evolve_particle, self.seeds[:10]:{}".format(self.seeds[:10]))
         self.logger.debug("in evolve_particle, len of self.seeds:{}".format(len(self.seeds)))
         self.logger.debug("in evolve_particle, self.parents:{}".format(self.parents))
 
@@ -395,6 +395,7 @@ class ParticleSwarm:
         while self.frames < self.frames_limit:
             # evolve particle
             self.results = []
+            self.logger.debug("evolve_swarm for one generation, begin !!!!!!!!!!!!!!!!!!!!!!!!!")
             # self.logger.debug("self.p_input:{}".format(self.p_input))
             for idx, particle in enumerate(self.p_input):
                 # self.logger.debug("in evolve_swarm, particle idx:{0},particle parent net:{1}".
@@ -403,8 +404,6 @@ class ParticleSwarm:
                 # [(seed, reward, frames),]
                 result = particle.evolve_particle()
                 self.results.extend(result)
-            self.logger.debug("in evolve_swarm, len self.results;{}".format(len(self.results)))
-            self.logger.debug("in evolve_swarm, self.results:{}".format(self.results[:10]))
             frames = sum([result[2] for result in self.results])
             if self.elite is not None:
                 self.results.append(self.elite)
@@ -412,6 +411,9 @@ class ParticleSwarm:
             self.frames = self.frames+frames
             if self.best_score is None:
                 self.best_score = self.results[0][1]
+
+            self.logger.debug("in evolve_swarm, len self.results;{}".format(len(self.results)))
+            self.logger.debug("in evolve_swarm, self.results, top 10:{}".format(self.results[:10]))
 
             if self.results[0][1] > self.best_score:
                 # no need deep copy here
@@ -424,7 +426,8 @@ class ParticleSwarm:
                     particle.update_parents(new_parents)
 
             self.logger.info("in evolve_swarm, best core:{}".format(self.best_score))
-            self.logger.info("in evolve_swarm, time cost:{}ms".format((time.time() - time_start)/60))
+            self.logger.info("in evolve_swarm, time cost:{} ms".format((time.time() - time_start)//60))
+            self.logger.debug("evolve_swarm for one generation, end ------------------------------------")
 
         self.logger.info("whole time cost:{}ms".format((time.time()-time_start)/60))
 

@@ -1,5 +1,5 @@
 {
-    "games": "PongNoFrameskip-v4",
+    "games": "AmidarNoFrameskip-v4",
     "swarm_size": 11,
     "population_per_worker": 100,
     "frames_limit": "500M",
