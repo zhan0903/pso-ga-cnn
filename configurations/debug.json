@@ -1,8 +1,9 @@
 {
     "games": "PongNoFrameskip-v4",
-    "swarm_size": 1,
-    "population_per_worker": 80,
+    "swarm_size": 3,
+    "population_per_worker": 10,
     "frames_limit": "100M",
     "debug": 1,
-    "comments": "10/6 version pso+ga+cnn,standard normal,loc=[0]"
+    "parents_size":3,
+    "comments": "10/12 version, global particle version, swarm_size has to be odd"
 }

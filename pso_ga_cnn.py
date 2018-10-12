@@ -12,6 +12,7 @@ import gym
 import sys
 import json
 import logging
+from tensorboardX import SummaryWriter
 import pickle
 
 
@@ -74,7 +75,7 @@ def evaluate(net, device, env_e):
     return reward, frames
 
 
-def mutate_net(net, seed, device, copy_net=True):
+def mutate_net(net, seed, device, loc=0, copy_net=True):
     new_net = copy.deepcopy(net) if copy_net else net
     # np.random.seed(seed)
     # print("in mutate_net,Before, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
@@ -82,17 +83,25 @@ def mutate_net(net, seed, device, copy_net=True):
     if seed:
         for p in new_net.parameters():
             # np.random.seed(seed)
-            noise_t = torch.tensor(np.random.normal(size=p.data.size()).astype(np.float32)).to(device)
+            noise_t = torch.tensor(np.random.normal(loc=loc, size=p.data.size()).astype(np.float32)).to(device)
             p.data += mutation_step * noise_t
-
     return new_net
 
 
 def build_net(env, seeds, device):
     torch.manual_seed(seeds[0])
+    # loc = seeds[0][1]
     net = Net(env.observation_space.shape, env.action_space.n).to(device)
-    for seed in seeds[1:]:
-        net = mutate_net(net, seed, device, copy_net=False)
+    for idx, item in enumerate(seeds[1:]):
+        if idx == 0:
+            # print("item in build_net:{}".format(item))
+            loc = item[0]
+            seed = item[1]
+        else:
+            seed = item
+            loc = 0
+        # print("seed in build net:{}".format(seed))
+        net = mutate_net(net, seed, device, loc=loc, copy_net=False)
     return net
 
 
@@ -132,8 +141,8 @@ def work_func(input_w):
 
 
 class Particle:
-    def __init__(self, logger, g_best=None, l_best_value=None, l_best=None, parent_net=None, velocity=None,
-                 population=10, devices='cpu', chi=0.72984, phi_p=2.05, phi_g=2.05, game="PongNoFrameskip-v4"):
+    def __init__(self, logger, parents=[], g_best=None, parents_size=20, l_best_value=None, l_best=None, parent_net=None, velocity=None,
+                 population=10, devices='cpu', loc=None, chi=0.72984, phi_p=2.05, phi_g=2.05, game="PongNoFrameskip-v4"):
         self.population = population
         self.chi = chi
         self.seeds = []
@@ -142,6 +151,7 @@ class Particle:
         # self.mutation_step = 0.005
         self.game = game
         self.devices = devices
+        self.parents_size = parents_size
         self.g_best = g_best
         # self.g_best_value = g_best_value
         self.l_best_seed = None
@@ -150,10 +160,12 @@ class Particle:
         self.parent_net = copy.deepcopy(parent_net)
         self.env = make_env(self.game)
         self.logger = logger
-        self.parents = []
+        self.parents = parents
         self.elite = None
         self.velocity = copy.deepcopy(velocity)
         self.max_process = mp.cpu_count()  # mp.cpu_count()
+        self.loc = loc
+
         # self.init_uniform_parent()
 
     def update_g_best(self, g_best_net):
@@ -166,6 +178,9 @@ class Particle:
     #     for seed in seeds[1:]:
     #         net = mutate_net(net, seed, device="cpu", copy_net=False)
     #     return net
+
+    def update_parents(self, parents):
+        self.parents = parents
 
     # update particle's position
     def update_position(self):
@@ -203,77 +218,83 @@ class Particle:
         # self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
         # noise_step = None
         time_start = time.time()
-        init = False
-        while True:
-            input_m = []
-            self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
-            self.logger.debug("in evolve_particle, len of self.seeds:{}".format(len(self.seeds)))
+        # init = False
+        # while True:
+        input_m = []
+        self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
+        self.logger.debug("in evolve_particle, len of self.seeds:{}".format(len(self.seeds)))
+        self.logger.debug("in evolve_particle, self.parents:{}".format(self.parents))
 
-            for u in range(self.population):
-                # noise_step = np.random.normal(scale=0.8)
-                if gpu_number == 0:
-                    device = "cpu"
-                else:
-                    device_id = u % gpu_number
-                    device = self.devices[device_id]
-                # if u == self.population:
-                #     input_m.append((None, self.game, device))
-                # else:
+        for u in range(self.population):
+            # noise_step = np.random.normal(scale=0.8)
+            if gpu_number == 0:
+                device = "cpu"
+            else:
+                device_id = u % gpu_number
+                device = self.devices[device_id]
+            # if u == self.population:
+            #     input_m.append((None, self.game, device))
+            # else:
+            seed = np.random.randint(MAX_SEED)
+            # if self.parents:
+            #     seed2 = np.random.randint(MAX_SEED)
+            #     input_individual = [seed, self.loc, seed2]
+            #
+            if not self.seeds or len(self.seeds) < self.population:
+                seed2 = np.random.randint(MAX_SEED)
+                self.seeds.append([seed, (self.loc, seed2)])
+            else:
+                # self.logger.debug("in evolve_particle, seed:{0},self.seeds[u]:{1}".format(seed, self.seeds[u]))
+                self.seeds[u].append(seed)
+            parent = np.random.randint(0, self.parents_size)
+            if self.parents:
+                input_seed = copy.copy(self.parents[parent])
                 seed = np.random.randint(MAX_SEED)
-                if not self.seeds or len(self.seeds) < self.population:
-                    self.seeds.append([seed])
-                else:
-                    # self.logger.debug("in evolve_particle, seed:{0},self.seeds[u]:{1}".format(seed, self.seeds[u]))
-                    self.seeds[u].append(seed)
-                parent = np.random.randint(0, 20)
-                if self.parents:
-                    input_seed = copy.copy(self.parents[parent][0])
-                    seed = np.random.randint(MAX_SEED)
-                    input_seed.append(seed)
-                else:
-                    input_seed = self.seeds[u]
+                input_seed.append(seed)
+            else:
+                input_seed = self.seeds[u]
 
-                # self.logger.debug("in evolve_paricle,u:{0},self.seeds[u]:{1}".format(u, self.seeds[u]))
-                input_m.append((input_seed, self.game, device))
+            # self.logger.debug("in evolve_paricle,u:{0},self.seeds[u]:{1}".format(u, self.seeds[u]))
+            input_m.append((input_seed, self.game, device))
             # evaluate parent net
             # input_m.append((None, self.game, self.devices[0]))
             # with open(r"my_trainer_objects.pkl", "wb") as output_file:
             #     pickle.dump(self.parent_net.state_dict(), output_file, True)
 
-            # max_process = max_cpu cores
-            pool = mp.Pool(self.max_process)
-            # (seed, reward, frames) map->map_aync
-            result = pool.map(work_func, input_m)
-            pool.close()
-            pool.join()
+        # max_process = max_cpu cores
+        pool = mp.Pool(self.max_process)
+        # (seed, reward, frames) map->map_aync
+        result = pool.map(work_func, input_m)
+        pool.close()
+        pool.join()
 
-            assert len(result) == self.population
-            if self.elite is not None:
-                result.append(self.elite)
-            result.sort(key=lambda p: p[1], reverse=True)
+        assert len(result) == self.population
+        # if self.elite is not None:
+        #     result.append(self.elite)
+        # result.sort(key=lambda p: p[1], reverse=True)
 
+        # if init:
+        #     self.parents = [(item[0], item[1]) for item in result[:20]]
+        #     self.logger.debug("self.parents:{}".format(self.parents))
+        #     init = True
+
+        # all_frames = sum([pair[2] for pair in result])
+        self.logger.info("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
+        self.logger.info("time cost:{}".format((time.time()-time_start)//60))
+        # if self.l_best_value < result[0][1]:
+            #     # init = True
+            #
+            #     # self.parents = copy.copy([(item[0], item[1]) for item in result[:20]])
+            #     # self.logger.debug("self.parents:{}".format(self.parents))
+            #     self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
+            #     self.elite = (result[0][0], result[0][1], 0)
+            #     # self.l_best_seed = result[0][0]
+            #     self.l_best_value = result[0][1]
+                # self.clone()
+                # self.logger.debug("self.seeds len:{0},self.seeds:{1}".format(len(self.seeds), self.seeds))
             # if init:
             #     self.parents = [(item[0], item[1]) for item in result[:20]]
             #     self.logger.debug("self.parents:{}".format(self.parents))
-            #     init = True
-
-            all_frames = sum([pair[2] for pair in result])
-            self.logger.info("current best score:{0},l_best_value:{1}".format(result[0][1],self.l_best_value))
-            self.logger.info("time cost:{}".format((time.time()-time_start)//60))
-            if self.l_best_value < result[0][1]:
-                init = True
-
-                # self.parents = copy.copy([(item[0], item[1]) for item in result[:20]])
-                # self.logger.debug("self.parents:{}".format(self.parents))
-                self.logger.debug("self.l_best_value:{}".format(self.l_best_value))
-                self.elite = (result[0][0], result[0][1], 0)
-                # self.l_best_seed = result[0][0]
-                self.l_best_value = result[0][1]
-                # self.clone()
-                # self.logger.debug("self.seeds len:{0},self.seeds:{1}".format(len(self.seeds), self.seeds))
-            if init:
-                self.parents = [(item[0], item[1]) for item in result[:20]]
-                self.logger.debug("self.parents:{}".format(self.parents))
 
             # self.parents = []
             # for i in range(10):
@@ -282,7 +303,7 @@ class Particle:
 
         # best_seeds = self.parent_seeds.append(self.l_best_seed)
         # self.logger.info("in evolve_particle, best score in paritcle:{0}, seed:{1}".format(result[0][1], result[0][0]))
-        return self.l_best, self.l_best_value, all_frames
+        return result
 
 
 # def update_particle(particle):
@@ -290,12 +311,13 @@ class Particle:
 
 
 class ParticleSwarm:
-    def __init__(self, frames_limit=100000, swarm_size=11, game="PongNoFrameskip-v4", population=20, logger=None):
+    def __init__(self, frames_limit=100000, parents_size=20, swarm_size=11, game="PongNoFrameskip-v4", population=20, logger=None):
         self.swarm_size = swarm_size
         self.best_score = None
         # self.best_seeds = None
         self.best_net = None
         self.logger = logger
+        self.parents_size = parents_size
 
         self.frames_limit = frames_limit
         self.population = population
@@ -305,6 +327,7 @@ class ParticleSwarm:
         self.p_input = []
         self.frames = 0
         self.env = make_env(game)
+        self.elite = None
 
     def init_swarm(self):
         devices = []
@@ -320,36 +343,44 @@ class ParticleSwarm:
         # create normal parents_net
         loc = 0
         loc_limit = (self.swarm_size-1)//2
+        # self.particles = [Particle(loc=i) for i in range(self.swarm_size)]
+
         for u in range(self.swarm_size):
-            # create normal parents_net
-            particle_parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)  # .to(self.device)
-            for p in particle_parent_net.parameters():
-                re_distribution = torch.tensor(np.random.normal(loc=loc, size=p.data.size()).astype(np.float32))#.to(device)
-                p.data += re_distribution
+
+            # # create normal parents_net
+            # particle_parent_net = Net(self.env.observation_space.shape, self.env.action_space.n)  # .to(self.device)
+            # for p in particle_parent_net.parameters():
+            # #     re_distribution = torch.tensor(np.random.normal(loc=loc, size=p.data.size()).astype(np.float32))#.to(device)
+            # #     p.data += re_distribution
+            # if loc == loc_limit:
+            #     loc = -loc_limit
+            # loc = loc + 1
+            # seed = np.random.randint(MAX_SEED)
+
+            # # self.parent_net = parent_net
+            # self.logger.debug("in init_swarm, create_normal_parent, particle_parent_net:{}".
+            #                   format(particle_parent_net.state_dict()['fc.2.bias']))
+            # # reward, frames = evaluate(particle_parent_net, "cpu", self.env)
+            # # self.frames = self.frames+frames
+            # if self.best_score is None:
+            #     self.best_score = reward
+            #     # self.best_net = copy.deepcopy(particle_parent_net)
+            #
+            # if reward > self.best_score:
+            #     self.best_score = reward
+            #     self.best_net = copy.deepcopy(particle_parent_net)
+            # l_best_value = reward
+            # l_best = particle_parent_net
+            # velocity = Net(self.env.observation_space.shape, self.env.action_space.n)
+            # self.logger.debug("in init_swarm,l_best_value:{}".format(l_best_value))
+
+            p = Particle(logger=self.logger, loc=loc, parents_size=self.parents_size,  devices=devices,
+                         population=self.population, game=self.game)
+            self.p_input.append(p)
             if loc == loc_limit:
                 loc = -loc_limit
-            loc = loc + 1
-
-            # self.parent_net = parent_net
-            self.logger.debug("in init_swarm, create_normal_parent, particle_parent_net:{}".
-                              format(particle_parent_net.state_dict()['fc.2.bias']))
-            reward, frames = evaluate(particle_parent_net, "cpu", self.env)
-            self.frames = self.frames+frames
-            if self.best_score is None:
-                self.best_score = reward
-                # self.best_net = copy.deepcopy(particle_parent_net)
-
-            if reward > self.best_score:
-                self.best_score = reward
-                self.best_net = copy.deepcopy(particle_parent_net)
-            l_best_value = reward
-            l_best = particle_parent_net
-            velocity = Net(self.env.observation_space.shape, self.env.action_space.n)
-            self.logger.debug("in init_swarm,l_best_value:{}".format(l_best_value))
-
-            p = Particle(logger=self.logger, velocity=velocity, devices=devices, l_best_value=l_best_value, l_best=l_best,
-                         parent_net=particle_parent_net, population=self.population, game=self.game)
-            self.p_input.append(p)
+            else:
+                loc = loc + 1
 
     def update_particle(self, particle):
         particle.update_parent_position(self.best_net)
@@ -359,33 +390,38 @@ class ParticleSwarm:
         # particle = Particle(population=10)
         self.init_swarm()
         time_start = time.time()
+        writer = SummaryWriter(comment="-pong-ga-multi-species")
+
         while self.frames < self.frames_limit:
             # evolve particle
             self.results = []
             # self.logger.debug("self.p_input:{}".format(self.p_input))
             for idx, particle in enumerate(self.p_input):
-                self.logger.debug("in evolve_swarm, particle idx:{0},particle parent net:{1}".
-                                  format(idx, particle.parent_net.state_dict()['fc.2.bias']))
-                # self.l_best, self.l_best_value, all_frames
+                # self.logger.debug("in evolve_swarm, particle idx:{0},particle parent net:{1}".
+                #                   format(idx, particle.parent_net.state_dict()['fc.2.bias']))
+                # result_particle/(seed,reward), all_frames
+                # [(seed, reward, frames),]
                 result = particle.evolve_particle()
-                self.results.append(result)
-
-            self.results.sort(key=lambda p: p[1], reverse=True)
+                self.results.extend(result)
+            self.logger.debug("in evolve_swarm, len self.results;{}".format(len(self.results)))
+            self.logger.debug("in evolve_swarm, self.results:{}".format(self.results))
             frames = sum([result[2] for result in self.results])
+            if self.elite is not None:
+                self.results.append(self.elite)
+            self.results.sort(key=lambda p: p[1], reverse=True)
             self.frames = self.frames+frames
+            if self.best_score is None:
+                self.best_score = self.results[0][1]
 
             if self.results[0][1] > self.best_score:
                 # no need deep copy here
                 self.best_net = self.results[0][0]
                 self.best_score = self.results[0][1]
-                # if find a better one, then update particles
-                # for particle in self.p_input:
-                #     particle.update_g_best(self.best_net)
-                    # particle.update_parent_position(self.best_net)
-                    # self.update_particle(particle)
-            # else:# random mutate particle parent
-            # for particle in self.p_input:
-            #     particle.update_position()
+                self.elite = self.results[0]
+                new_parents = [item[0] for item in self.results[:self.parents_size]]
+                self.logger.debug("in evolve_swarm, new_parents:{}".format(new_parents))
+                for particle in self.p_input:
+                    particle.update_parents(new_parents)
 
             self.logger.info("best core:{}".format(self.best_score))
             self.logger.info("time cost:{}ms".format((time.time() - time_start)//60))
@@ -414,6 +450,7 @@ def main(**exp):
     population_per_worker = exp["population_per_worker"]
     games = exp["games"].split(',')
     logger.info("games:{}".format(games))
+    parents_size = exp["parents_size"]
 
     if exp["frames_limit"][-1] == "B":
         frames_limit = 1000000000*int(exp["frames_limit"][:-1])
@@ -424,7 +461,7 @@ def main(**exp):
 
     logger.info("{}".format(str(json.dumps(exp, indent=4, sort_keys=True))))
     for game in games:
-        swarm = ParticleSwarm(frames_limit=frames_limit, game=game, swarm_size=swarm_size,
+        swarm = ParticleSwarm(frames_limit=frames_limit, parents_size=parents_size, game=game, swarm_size=swarm_size,
                               population=population_per_worker, logger=logger)
         swarm.evolve_swarm()
         logger.info("game=%s,reward_max=%.2f" % (game, swarm.best_score))
