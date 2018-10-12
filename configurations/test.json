@@ -1,7 +1,7 @@
 {
     "games": "AmidarNoFrameskip-v4",
     "swarm_size": 11,
-    "population_per_worker": 100,
+    "population_per_worker": 200,
     "frames_limit": "500M",
     "debug": 0,
     "parents_size":20,
