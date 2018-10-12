@@ -14,6 +14,7 @@ import json
 import logging
 from tensorboardX import SummaryWriter
 import pickle
+import random
 
 
 MAX_SEED = 2**32 - 1
@@ -391,6 +392,7 @@ class ParticleSwarm:
         self.init_swarm()
         time_start = time.time()
         writer = SummaryWriter(comment="-pong-ga-multi-species")
+        random_search = True
 
         while self.frames < self.frames_limit:
             # evolve particle
@@ -407,19 +409,27 @@ class ParticleSwarm:
             frames = sum([result[2] for result in self.results])
             if self.elite is not None:
                 self.results.append(self.elite)
+            random.shuffle(self.results)
             self.results.sort(key=lambda p: p[1], reverse=True)
             self.frames = self.frames+frames
             if self.best_score is None:
                 self.best_score = self.results[0][1]
 
             self.logger.debug("in evolve_swarm, len self.results;{}".format(len(self.results)))
-            self.logger.debug("in evolve_swarm, self.results, top 10:{}".format(self.results[:10]))
+            self.logger.debug("in evolve_swarm, self.results, top 20:{}".format(self.results[:20]))
 
             if self.results[0][1] > self.best_score:
                 # no need deep copy here
                 self.best_net = self.results[0][0]
                 self.best_score = self.results[0][1]
                 self.elite = self.results[0]
+                random_search = False
+                # new_parents = [item[0] for item in self.results[:self.parents_size]]
+                # self.logger.debug("in evolve_swarm, new_parents:{}".format(new_parents))
+                # for particle in self.p_input:
+                #     particle.update_parents(new_parents)
+
+            if not random_search:
                 new_parents = [item[0] for item in self.results[:self.parents_size]]
                 self.logger.debug("in evolve_swarm, new_parents:{}".format(new_parents))
                 for particle in self.p_input:
