@@ -404,7 +404,7 @@ class ParticleSwarm:
                 result = particle.evolve_particle()
                 self.results.extend(result)
             self.logger.debug("in evolve_swarm, len self.results;{}".format(len(self.results)))
-            self.logger.debug("in evolve_swarm, self.results:{}".format(self.results))
+            self.logger.debug("in evolve_swarm, self.results:{}".format(self.results[:10]))
             frames = sum([result[2] for result in self.results])
             if self.elite is not None:
                 self.results.append(self.elite)
@@ -424,9 +424,9 @@ class ParticleSwarm:
                     particle.update_parents(new_parents)
 
             self.logger.info("best core:{}".format(self.best_score))
-            self.logger.info("time cost:{}ms".format((time.time() - time_start)//60))
+            self.logger.info("time cost:{}ms".format((time.time() - time_start)/60))
 
-        self.logger.info("whole time cost:{}ms".format((time.time()-time_start)//60))
+        self.logger.info("whole time cost:{}ms".format((time.time()-time_start)/60))
 
 
 def main(**exp):
