@@ -94,13 +94,13 @@ def build_net(env, seeds, device):
     net = Net(env.observation_space.shape, env.action_space.n).to(device)
     for idx, item in enumerate(seeds[1:]):
         if idx == 0:
-            # print("item in build_net:{}".format(item))
+            print("item in build_net:{}".format(item))
             loc = item[0]
             seed = item[1]
         else:
             seed = item
             loc = 0
-        # print("seed in build net:{}".format(seed))
+        print("seed in build net:{}".format(seed))
         net = mutate_net(net, seed, device, loc=loc, copy_net=False)
     return net
 
@@ -221,7 +221,7 @@ class Particle:
         # init = False
         # while True:
         input_m = []
-        self.logger.debug("in evolve_particle, self.seeds:{}".format(self.seeds))
+        self.logger.debug("in evolve_particle, self.seeds[:10]:{}".format(self.seeds[:10]))
         self.logger.debug("in evolve_particle, len of self.seeds:{}".format(len(self.seeds)))
         self.logger.debug("in evolve_particle, self.parents:{}".format(self.parents))
 
@@ -423,8 +423,8 @@ class ParticleSwarm:
                 for particle in self.p_input:
                     particle.update_parents(new_parents)
 
-            self.logger.info("best core:{}".format(self.best_score))
-            self.logger.info("time cost:{}ms".format((time.time() - time_start)/60))
+            self.logger.info("in evolve_swarm, best core:{}".format(self.best_score))
+            self.logger.info("in evolve_swarm, time cost:{}ms".format((time.time() - time_start)/60))
 
         self.logger.info("whole time cost:{}ms".format((time.time()-time_start)/60))
 
