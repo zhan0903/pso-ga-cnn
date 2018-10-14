@@ -1,5 +1,5 @@
 {
-    "games": "AssaultNoFrameskip-v4",
+    "games": "AsteroidsNoFrameskip-v4",
     "swarm_size": 11,
     "population_per_worker": 80,
     "frames_limit": "100M",
