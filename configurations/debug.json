@@ -1,6 +1,6 @@
 {
     "games": "AsteroidsNoFrameskip-v4",
-    "swarm_size": 11,
+    "swarm_size": 21,
     "population_per_worker": 80,
     "frames_limit": "100M",
     "debug": 1,
