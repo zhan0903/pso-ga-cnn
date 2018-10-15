@@ -1,5 +1,5 @@
 {
-    "games": "AmidarNoFrameskip-v4",
+    "games": "GravitarNoFrameskip-v4",
     "swarm_size": 20,
     "population_per_worker": 100,
     "frames_limit": "500M",

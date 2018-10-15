@@ -1,5 +1,5 @@
 {
-    "games": "AtlantisNoFrameskip-v4",
+    "games": "GravitarNoFrameskip-v4",
     "swarm_size": 10,
     "population_per_worker": 80,
     "frames_limit": "100M",
