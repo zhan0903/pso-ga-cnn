@@ -76,7 +76,7 @@ def evaluate(net, device, env_e):
     return reward, frames
 
 
-def mutate_net(net, seed, device, loc=0, copy_net=True):
+def mutate_net(net, seed, device, scale=1, copy_net=True):
     new_net = copy.deepcopy(net) if copy_net else net
     # np.random.seed(seed)
     # print("in mutate_net,Before, parent_net:{}".format(new_net.state_dict()['fc.2.bias']))
@@ -84,7 +84,7 @@ def mutate_net(net, seed, device, loc=0, copy_net=True):
     if seed:
         for p in new_net.parameters():
             # np.random.seed(seed)
-            noise_t = torch.tensor(np.random.normal(loc=loc, size=p.data.size()).astype(np.float32)).to(device)
+            noise_t = torch.tensor(np.random.normal(scale=scale, size=p.data.size()).astype(np.float32)).to(device)
             p.data += mutation_step * noise_t
     return new_net
 
@@ -94,15 +94,15 @@ def build_net(env, seeds, device):
     # loc = seeds[0][1]
     net = Net(env.observation_space.shape, env.action_space.n).to(device)
     for idx, item in enumerate(seeds[1:]):
-        if idx == 0:
+        # if idx == 0:
             # print("item in build_net:{}".format(item))
-            loc = item[0]
-            seed = item[1]
-        else:
-            seed = item
-            loc = 0
+        scale = item[0]
+        seed = item[1]
+        # else:
+        #     seed = item
+        #     loc = 0
         # print("seed in build net:{}".format(seed))
-        net = mutate_net(net, seed, device, loc=loc, copy_net=False)
+        net = mutate_net(net, seed, device, scale=scale, copy_net=False)
     return net
 
 
@@ -143,7 +143,7 @@ def work_func(input_w):
 
 class Particle:
     def __init__(self, logger, parents=[], g_best=None, parents_size=20, l_best_value=None, l_best=None, parent_net=None, velocity=None,
-                 population=10, devices='cpu', loc=None, chi=0.72984, phi_p=2.05, phi_g=2.05, game="PongNoFrameskip-v4"):
+                 population=10, devices='cpu', scale=None, chi=0.72984, phi_p=2.05, phi_g=2.05, game="PongNoFrameskip-v4"):
         self.population = population
         self.chi = chi
         self.seeds = []
@@ -165,7 +165,7 @@ class Particle:
         self.elite = None
         self.velocity = copy.deepcopy(velocity)
         self.max_process = mp.cpu_count()  # mp.cpu_count()
-        self.loc = loc
+        self.scale = scale
 
         # self.init_uniform_parent()
 
@@ -243,10 +243,10 @@ class Particle:
             #
             if not self.seeds or len(self.seeds) < self.population:
                 seed2 = np.random.randint(MAX_SEED)
-                self.seeds.append([seed, (self.loc, seed2)])
+                self.seeds.append([seed, (self.scale, seed2)])
             else:
                 # self.logger.debug("in evolve_particle, seed:{0},self.seeds[u]:{1}".format(seed, self.seeds[u]))
-                self.seeds[u].append(seed)
+                self.seeds[u].append((self.scale, seed))
             parent = np.random.randint(0, self.parents_size)
             if self.parents:
                 input_seed = copy.copy(self.parents[parent])
@@ -342,8 +342,8 @@ class ParticleSwarm:
         else:
             devices = "cpu"
         # create normal parents_net
-        loc = 0
-        loc_limit = (self.swarm_size-1)//2
+        scale = 0.5
+        # loc_limit = (self.swarm_size-1)//2
         # self.particles = [Particle(loc=i) for i in range(self.swarm_size)]
 
         for u in range(self.swarm_size):
@@ -375,13 +375,14 @@ class ParticleSwarm:
             # velocity = Net(self.env.observation_space.shape, self.env.action_space.n)
             # self.logger.debug("in init_swarm,l_best_value:{}".format(l_best_value))
 
-            p = Particle(logger=self.logger, loc=loc, parents_size=self.parents_size,  devices=devices,
+            p = Particle(logger=self.logger, scale=scale, parents_size=self.parents_size,  devices=devices,
                          population=self.population, game=self.game)
             self.p_input.append(p)
-            if loc == loc_limit:
-                loc = -loc_limit
-            else:
-                loc = loc + 1
+            scale = scale+0.5
+            # if loc == loc_limit:
+            #     loc = -loc_limit
+            # else:
+            #     loc = loc + 0.5
 
     def update_particle(self, particle):
         particle.update_parent_position(self.best_net)
