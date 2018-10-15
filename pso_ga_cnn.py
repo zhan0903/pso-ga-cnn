@@ -251,7 +251,7 @@ class Particle:
             if self.parents:
                 input_seed = copy.copy(self.parents[parent])
                 seed = np.random.randint(MAX_SEED)
-                input_seed.append(seed)
+                input_seed.append((self.scale, seed))
             else:
                 input_seed = self.seeds[u]
 

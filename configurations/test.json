@@ -4,6 +4,6 @@
     "population_per_worker": 100,
     "frames_limit": "500M",
     "debug": 0,
-    "parents_size":20,
+    "parents_size":10,
     "comments": "10/15 version, change loc to scale"
 }
