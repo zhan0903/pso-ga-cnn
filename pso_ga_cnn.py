@@ -95,7 +95,7 @@ def build_net(env, seeds, device):
     net = Net(env.observation_space.shape, env.action_space.n).to(device)
     for idx, item in enumerate(seeds[1:]):
         # if idx == 0:
-        print("item in build_net:{}".format(item))
+        # print("item in build_net:{}".format(item))
         scale = item[0]
         seed = item[1]
         # else:
