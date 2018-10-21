@@ -54,6 +54,43 @@ class Net(nn.Module):
         conv_out = self.conv(fx).view(fx.size()[0], -1)
         return self.fc(conv_out)
 
+    # def compute_weights_from_seeds(self, noise, seeds, cache=None):
+    #     if cache:
+    #         cache_seeds = [o[1] for o in cache]
+    #         if seeds in cache_seeds:
+    #             return cache[cache_seeds.index(seeds)][0]
+    #         elif seeds[:-1] in cache_seeds:
+    #             theta = cache[cache_seeds.index(seeds[:-1])][0]
+    #             return self.compute_mutation(noise, theta, *seeds[-1])
+    #         elif len(seeds) == 1:
+    #             return self.compute_weights_from_seeds(noise, seeds)
+    #         else:
+    #             raise NotImplementedError()
+    #     else:
+    #         idx = seeds[0]
+    #         theta = noise.get(idx, self.num_params).copy() * self.scale_by
+    #
+    #         for mutation in seeds[1:]:
+    #             idx, power = mutation
+    #             theta = self.compute_mutation(noise, theta, idx, power)
+    #         return theta
+
+    # def compute_mutation(self, noise, parent_theta, idx, mutation_power):
+    #     return parent_theta + mutation_power * noise.get(idx, self.num_params)
+
+    # def randomize(self, rs, noise):
+    #     seeds = (noise.sample_index(rs, self.num_params), )
+    #     return self.compute_weights_from_seeds(noise, seeds), seeds
+
+    # def make_weights(self):
+    #     self.num_params = 0
+    #     shape = []
+    #     for p in self.parameters():
+    #         pass
+
+
+
+
 
 # out_item = (reward_max_p, speed_p)
 OutputItem = collections.namedtuple('OutputItem', field_names=['top_children_p', 'frames','position'])
