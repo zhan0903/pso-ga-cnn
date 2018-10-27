@@ -32,9 +32,9 @@ class Net(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(input_shape[0], 32, kernel_size=8, stride=4),
             nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.Conv2d(32, 64, kernel_size=4, padding=2, stride=2),
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1, stride=1),
             nn.ReLU()
         )
 
@@ -54,42 +54,49 @@ class Net(nn.Module):
         conv_out = self.conv(fx).view(fx.size()[0], -1)
         return self.fc(conv_out)
 
-    # def compute_weights_from_seeds(self, noise, seeds, cache=None):
-    #     if cache:
-    #         cache_seeds = [o[1] for o in cache]
-    #         if seeds in cache_seeds:
-    #             return cache[cache_seeds.index(seeds)][0]
-    #         elif seeds[:-1] in cache_seeds:
-    #             theta = cache[cache_seeds.index(seeds[:-1])][0]
-    #             return self.compute_mutation(noise, theta, *seeds[-1])
-    #         elif len(seeds) == 1:
-    #             return self.compute_weights_from_seeds(noise, seeds)
-    #         else:
-    #             raise NotImplementedError()
-    #     else:
-    #         idx = seeds[0]
-    #         theta = noise.get(idx, self.num_params).copy() * self.scale_by
-    #
-    #         for mutation in seeds[1:]:
-    #             idx, power = mutation
-    #             theta = self.compute_mutation(noise, theta, idx, power)
-    #         return theta
+    def compute_weights_from_seeds(self, noise, seeds, cache=None):
+        if cache:
+            cache_seeds = [o[1] for o in cache]
+            if seeds in cache_seeds:
+                return cache[cache_seeds.index(seeds)][0]
+            elif seeds[:-1] in cache_seeds:
+                theta = cache[cache_seeds.index(seeds[:-1])][0]
+                return self.compute_mutation(noise, theta, *seeds[-1])
+            elif len(seeds) == 1:
+                return self.compute_weights_from_seeds(noise, seeds)
+            else:
+                raise NotImplementedError()
+        else:
+            idx = seeds[0]
+            theta = noise.get(idx, self.num_params).copy() * self.scale_by
 
-    # def compute_mutation(self, noise, parent_theta, idx, mutation_power):
-    #     return parent_theta + mutation_power * noise.get(idx, self.num_params)
+            for mutation in seeds[1:]:
+                idx, power = mutation
+                theta = self.compute_mutation(noise, theta, idx, power)
+            return theta
 
-    # def randomize(self, rs, noise):
-    #     seeds = (noise.sample_index(rs, self.num_params), )
-    #     return self.compute_weights_from_seeds(noise, seeds), seeds
+    def compute_mutation(self, noise, parent_theta, idx, mutation_power):
+        return parent_theta + mutation_power * noise.get(idx, self.num_params)
 
-    # def make_weights(self):
-    #     self.num_params = 0
-    #     shape = []
-    #     for p in self.parameters():
-    #         pass
+    def randomize(self, rs, noise):
+        seeds = (noise.sample_index(rs, self.num_params), )
+        return self.compute_weights_from_seeds(noise, seeds), seeds
 
-
-
+    def make_weights(self,std):
+        self.num_params = 0
+        shapes = []
+        self.scale_by = []
+        self.theta = []
+        self.theta_idx = None
+        for p in self.parameters():
+            shape = p.data.size()
+            shapes.append(shape)
+            self.num_params += np.prod(shape)
+            scale_by = std / np.sqrt(np.prod(shape))
+            self.scale_by.append(scale_by * np.ones(np.prod(shape), dtype=np.float32))
+        # self.seeds = [None] * self.batch_size
+        self.scale_by = np.concatenate(self.scale_by)
+        assert self.scale_by.size == self.num_params
 
 
 # out_item = (reward_max_p, speed_p)
@@ -416,10 +423,6 @@ class ParticleSwarm:
                          population=self.population, game=self.game)
             self.p_input.append(p)
             scale = scale+0.5
-            # if loc == loc_limit:
-            #     loc = -loc_limit
-            # else:
-            #     loc = loc + 0.5
 
     def update_particle(self, particle):
         particle.update_parent_position(self.best_net)

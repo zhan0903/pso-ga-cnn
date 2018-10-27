@@ -1,5 +1,5 @@
 {
-    "games": "GravitarNoFrameskip-v4",
+    "games": "pong",
     "swarm_size": 20,
     "population_per_worker": 80,
     "frames_limit": "100M",
